@@ -17,6 +17,6 @@ Thanks for helping improve the planner. It's a small project, so the process is 
 
 Merging to `main` deploys the site automatically after the tests pass.
 
-Training advice in the planner should stay conservative and effort-first. If you change plan rules, explain the reasoning (and a source, if there is one) in the PR.
+Training advice in the planner should stay conservative and effort-first. If you change plan rules, safety warnings or nutrition text, explain the reasoning and cite a source in the PR, and flag it for review by a qualified person (coach, clinician or dietitian) before merge. [CLAUDE.md → Review lenses](CLAUDE.md#review-lenses) lists the perspectives and personas to check a change against.
 
 By contributing you agree your work is released under [the Unlicense](LICENSE).

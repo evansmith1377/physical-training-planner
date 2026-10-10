@@ -49,65 +49,46 @@ To add a setting: add it to `FIELDS` and the form markup, read it in `readCfg`, 
 
 ## Review lenses
 
-Design, build, test and review every change through each lens that applies, not only the obvious one. Name the lenses you used in the PR, and say what each one changed or caught.
+Design, build, test and review every change through each lens that applies, not only the obvious one. Each lens adds questions on top of the Hard constraints above.
 
 **Engineering and operations**
-
-| Lens | Asks |
-|---|---|
-| Principal engineer / systems architect | Is this the simplest change at the right layer? Does it keep `computeCalendar` the single source of truth, internal units fixed, and `index.html` self-contained? |
-| QA / test engineer | What would break it: edge values, both unit systems, all three goals, dates and time zones, odd links? Is there a test that fails without the change? |
-| SecOps / AppSec | Can untrusted input (links, `localStorage`, pasted text) reach `innerHTML`, the CSP, or the `.ics` file? Are actions SHA-pinned, and is the workflow `permissions:` block least-privilege? |
-| Supply chain | Is the new dependency (test-only) needed? Is it pinned and covered by Dependabot? Never add one to the page. |
-| DevOps / release | Does CI stay fast and deterministic? Does the deploy still work on `main`? Will it roll back cleanly? |
-| Cloud / site reliability | GitHub Pages hosting: caching of `index.html`, the `og:image` path, 404s, behavior on a slow or offline phone. |
-| Privacy | Settings and checkmarks stay in the browser. No new storage keys without a migration plan. Shared links carry only plan settings. |
-| Performance | No layout jank on input, no wasted renders, print still fast for long plans. |
+- **Principal engineer / systems architect:** is this the simplest change, at the right layer, with no duplicated logic?
+- **QA / test engineer:** what breaks it (edge values, both unit systems, all three goals, dates and time zones, odd links)? Does a test fail without the change?
+- **SecOps / supply chain:** can untrusted input reach markup, the CSP or the `.ics` file? Are actions SHA-pinned, workflow `permissions:` least-privilege, and any new test dependency pinned and covered by Dependabot?
+- **DevOps / cloud ops:** CI stays fast and deterministic; the GitHub Pages deploy, caching, `og:image` path and rollback still work.
+- **Privacy:** no new storage keys without a migration plan; shared links carry only plan settings.
+- **Performance:** no jank on input, no wasted renders, print stays fast for long plans.
 
 **Design and content**
+- **UX / interaction designer:** is the next step obvious, do defaults suit most people, can a mistake be undone?
+- **Accessibility specialist:** keyboard and screen reader, contrast in light, dark and print, axe checks pass.
+- **Content designer:** plain language, short labels, consistent terms (see the glossary).
+- **Visual / print designer and localization:** phone width, dark mode, miles and km, Sunday and Monday weeks, Letter and A4 in both orientations.
 
-| Lens | Asks |
-|---|---|
-| UX / interaction designer | Is the next step obvious? Do defaults suit most people? Can a mistake be undone? |
-| Accessibility specialist | Keyboard, screen reader, contrast in light/dark/print, 44px targets, axe checks pass. |
-| Content designer | Plain language, short labels, visible hints, consistent terms (see the glossary). |
-| Visual / print designer | Phone width, dark mode, Letter and A4 in both orientations, no awkward page breaks. |
-| Localization | Miles and km, Sunday and Monday week starts, paper sizes, local dates. |
+**People and domain experts**
+- **User voice:** what did users actually report? Solve their problem in their words.
+- **Running coach / exercise physiologist:** is the progression conservative (weekly and long-run growth, cutbacks, taper), and do the paces and zones match the guide's sources?
+- **Sports medicine / physiotherapy:** are injury, illness and heat warnings visible? Does anything push through pain or ignore a red flag?
+- **Sports dietitian:** no restriction messaging; fueling advice matches the cited position stands.
 
-**People**
+The expert lenses are for checking, not a stand-in for real professionals. Changes to plan rules, safety warnings or nutrition text must cite a source and be flagged in the PR for review by a qualified person before merge.
 
-| Lens | Asks |
-|---|---|
-| User voice | What did users actually report (issues, quoted feedback)? Does the change solve their problem in their words? |
-| Personas | Walk the change through each persona below. |
-| Running coach / certified trainer | Is the progression conservative (weekly and long-run growth, cutbacks, taper) and the effort guidance sound? |
-| Sports medicine / physiotherapy | Are injury, illness and heat warnings visible? Does anything push through pain or ignore a red flag? |
-| Sports dietitian | No calorie targets, no restriction messaging; fueling advice matches the cited position stands. |
-| Exercise physiologist | Do the pace equations, intensity zones and taper match the sources in the guide? |
-
-The expert lenses are for checking, not a stand-in for a real professional. Any change to plan rules, safety warnings, or nutrition text must cite a source in the PR. It must also be flagged for review by a qualified person before merge.
-
-**Personas**
-
-- **Emily (the defaults):** 25 mi a week, 13 mi long run, stepping up from the half to a first marathon in 22 weeks, 5 run days, 2 strength days. Resetting to defaults should always bring back her plan.
-- **New runner:** 12–15 mi a week, aiming at a first half. Needs reassurance, clear effort cues, and no jargon without an explanation.
+**Personas** (walk each change through the ones it affects)
+- **Emily (the defaults):** 25 mi a week, 13 mi long run, stepping up from the half to a first marathon in 22 weeks, 5 run days, 2 strength days. Resetting to defaults always brings back her plan.
+- **New runner:** 12–15 mi a week, aiming at a first half. Needs reassurance, clear effort cues, and no unexplained jargon.
 - **High-mileage runner:** 50–70 mi a week, according to Strava. Needs wide input ranges, and doesn't want to be talked down to.
 - **Returning or older runner:** coming back from injury or a break. Needs conservative ramps, visible red flags, and an easy way to repeat a week.
-- **Metric runner abroad:** km, Monday weeks, A4 paper.
 - **Phone-only runner:** opens a shared link on a phone and ticks off workouts there.
-- **Keyboard / screen-reader user:** the whole flow works without a mouse or sight.
 - **Coach or friend sharing a plan:** sends a link and prints a copy, expecting the recipient to see exactly the same plan.
 
 ## Workflow for every change
 
-1. **Scope.** Start from the issue. Restate the user's problem, and pick the lenses and personas that apply.
-2. **Design.** Choose the smallest change that solves the problem. Check modern-web-guidance before new UI patterns.
-3. **Build.** Work on a branch, run `python scripts/csp_hash.py` after script edits, and add or update tests.
-4. **Verify.** Run `pytest -q`. For UI work, check phone width, dark mode and print. Run `python scripts/screenshots.py` if the UI changed noticeably.
-5. **Review.** Run `/simplify`, then `/code-review`. Fix what's real, and note what you skipped and why. Use `/security-review` when a change touches input handling, storage, links, the CSP, or workflows.
-6. **PR.** Fill in the template, link the issue (`Closes #n`), and list the lenses used.
-7. **Loop.** Wait for CI. Fix failures at their root cause and answer every review thread. Repeat until CI is green and nothing is open.
-8. **Merge.** Squash-merge once CI is green and no threads remain open, then confirm the Pages deploy succeeded.
+1. Start from the issue. Restate the user's problem, and pick the lenses and personas that apply.
+2. Build the smallest change that solves it on a branch, following the conventions above. Verify it as described in *Verifying changes*.
+3. Run `/simplify`, then `/code-review`. Fix what's real, and note what you skipped and why. Also run `/security-review` when a change touches input handling, storage, links, the CSP or workflows.
+4. Open a PR from the template, with `Closes #n`.
+5. Loop on CI and review threads until CI is green and every thread is answered. The ruleset in `.github/rulesets/main.json` enforces the merge conditions.
+6. Squash-merge, then confirm the Pages deploy succeeded.
 
 ## Verifying changes
 

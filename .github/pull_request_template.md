@@ -14,4 +14,4 @@
 
 ## Lenses
 
-<!-- Which review lenses and personas from CLAUDE.md applied, and what each one changed or caught. -->
+<!-- Only the lenses and personas from CLAUDE.md that changed or caught something, one line each. -->
