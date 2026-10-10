@@ -47,6 +47,49 @@ To add a setting: add it to `FIELDS` and the form markup, read it in `readCfg`, 
 - Layout: `.cal-wrap` is a size container. Below 46rem (screen only) the table becomes stacked cards; print always uses the table. Portrait print tightening lives under `body.print-portrait`.
 - Print pagination: each guide topic is wrapped in `<div class="topic">` (heading plus its content), which print keeps on one page. Wrap any new topic the same way. Phase rows don't break from the week after them.
 
+## Review lenses
+
+Design, build, test and review every change through each lens that applies, not only the obvious one. Each lens adds questions on top of the Hard constraints above.
+
+**Engineering and operations**
+- **Principal engineer / systems architect:** is this the simplest change, at the right layer, with no duplicated logic?
+- **QA / test engineer:** what breaks it (edge values, both unit systems, all three goals, dates and time zones, odd links)? Does a test fail without the change?
+- **SecOps / supply chain:** can untrusted input reach markup, the CSP or the `.ics` file? Are actions SHA-pinned, workflow `permissions:` least-privilege, and any new test dependency pinned and covered by Dependabot?
+- **DevOps / cloud ops:** CI stays fast and deterministic; the GitHub Pages deploy, caching, `og:image` path and rollback still work.
+- **Privacy:** no new storage keys without a migration plan; shared links should carry plan settings only, never personal data such as body weight.
+- **Performance:** no jank on input, no wasted renders, print stays fast for long plans.
+
+**Design and content**
+- **UX / interaction designer:** is the next step obvious, do defaults suit most people, can a mistake be undone?
+- **Accessibility specialist:** keyboard and screen reader, contrast in light, dark and print, axe checks pass.
+- **Content designer:** plain language, short labels, consistent terms (see the glossary).
+- **Visual / print designer and localization:** phone width, dark mode, miles and km, Sunday and Monday weeks, Letter and A4 in both orientations.
+
+**People and domain experts**
+- **User voice:** what did users actually report? Solve their problem in their words.
+- **Running coach / exercise physiologist:** is the progression conservative (weekly and long-run growth, cutbacks, taper), and do the paces and zones match the guide's sources?
+- **Sports medicine / physiotherapy:** are injury, illness and heat warnings visible? Does anything push through pain or ignore a red flag?
+- **Sports dietitian:** no restriction messaging; fueling advice matches the cited position stands.
+
+The expert lenses are for checking, not a stand-in for real professionals. Changes to plan rules, safety warnings or nutrition text must cite a source and be flagged in the PR for review by a qualified person before merge.
+
+**Personas** (walk each change through the ones it affects)
+- **Emily (the defaults):** 25 mi a week, 13 mi long run, stepping up from the half to a first marathon in 22 weeks, 5 run days, 2 strength days. Resetting to defaults always brings back her plan.
+- **New runner:** 12–15 mi a week, aiming at a first half. Needs reassurance, clear effort cues, and no unexplained jargon.
+- **High-mileage runner:** 50–70 mi a week, according to Strava. Needs wide input ranges, and doesn't want to be talked down to.
+- **Returning or older runner:** coming back from injury or a break. Needs conservative ramps, visible red flags, and an clear guidance on repeating a week.
+- **Phone-only runner:** opens a shared link on a phone and ticks off workouts there.
+- **Coach or friend sharing a plan:** sends a link and prints a copy, expecting the recipient to see exactly the same plan.
+
+## Workflow for every change
+
+1. Start from the issue, if there is one. Restate the user's problem, and pick the lenses and personas that apply.
+2. Build the smallest change that solves it on a branch, following the conventions above. Verify it as described in *Verifying changes*.
+3. Run `/simplify`, then `/code-review`. Fix what's real, and note what you skipped and why. Also run `/security-review` when a change touches input handling, storage, links, the CSP or workflows.
+4. Open a PR from the template, with `Closes #n` if there's an issue. Request a reviewer for any expert-review flag: the ruleset doesn't require approvals, so that gate is on you.
+5. Loop on CI and review threads until CI is green and every thread is answered and resolved. The ruleset in `.github/rulesets/main.json` requires the `test` check and resolved threads before merge.
+6. Squash-merge, then confirm the Pages deploy succeeded.
+
 ## Verifying changes
 
 Run `pytest -q` (see README → Development for setup). CI runs the same suite on every PR and before each deploy.

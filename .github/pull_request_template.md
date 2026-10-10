@@ -9,3 +9,9 @@
 - [ ] Checked the change on a phone-width screen and in print preview, if it affects layout
 - [ ] Ran `python scripts/screenshots.py` if the UI changed noticeably
 - [ ] Updated README.md / CLAUDE.md if behavior or conventions changed
+- [ ] Ran `/simplify` and `/code-review` (for AI-assisted changes)
+- [ ] Plan-rule, safety or nutrition changes cite a source and are flagged for expert review
+
+## Lenses
+
+<!-- Only the lenses and personas from CLAUDE.md that changed or caught something, one line each. -->
