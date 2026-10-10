@@ -14,6 +14,7 @@ scripts/csp_hash.py     keeps the CSP script hash in sync
 scripts/screenshots.py  regenerates og-image and screenshots
 tests/                  pytest + Playwright suite
 .github/workflows/      ci.yml (PRs), deploy.yml (main → Pages)
+.github/rulesets/       main.json (branch ruleset; import in repo settings)
 ```
 
 ## Hard constraints
