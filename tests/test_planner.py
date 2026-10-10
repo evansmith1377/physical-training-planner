@@ -156,11 +156,19 @@ def test_shared_link_leaves_out_body_weight(page):
     assert "miles=30" in url and "weight" not in url
 
 
-def test_opening_a_link_keeps_own_weight_and_ignores_linked_weight(page, base_url):
-    fill(page, "#weight", "150")  # saved in this browser, in lb
-    page.goto(base_url + "?units=metric&miles=40&weight=99")
+@pytest.mark.parametrize("stored,query,expected", [
+    ({"units": "us", "weight": "150"}, "?units=metric&miles=40&weight=99", ["metric", "40", "68"]),  # own 150 lb in kg
+    ({"units": "us", "weight": "150"}, "?units=foo&miles=30", ["us", "30", "150"]),  # bad units: no conversion
+    ({"weight": "150"}, "?miles=30", ["us", "30", "150"]),  # saved settings without units mean US
+    ({"units": "metric", "weight": "70"}, "?miles=30", ["us", "30", "154"]),  # a link without units means US
+])
+def test_opening_a_link_keeps_own_weight(page, base_url, stored, query, expected):
+    page.evaluate("s => localStorage.setItem('ptp.settings.v1', JSON.stringify(s))", stored)
+    page.goto(base_url + query)
     page.wait_for_selector("#calBody tr.week")
-    assert values(page, "miles", "weight") == ["40", "68"]  # own 150 lb in kg; the link's 99 is ignored
+    units = "metric" if page.is_checked('input[name="units"][value="metric"]') else "us"
+    assert [units, *values(page, "miles", "weight")] == expected
+    assert "weight" not in page.url  # an older link's weight is taken out of the address bar
 
 
 def test_reset_and_undo(page):
