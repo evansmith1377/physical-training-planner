@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="color-scheme" content="light dark">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-jmIwCF+ca2KqpD6m2loXVeIe4mWzK5/szpaCnKUwBio='; style-src 'unsafe-inline'; img-src 'self' data:; base-uri 'none'; form-action 'none'; object-src 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-lUIEiO5X8DviqCQjzxJ9NyxWuaY3NLGx2pp4lrCnHME='; style-src 'unsafe-inline'; img-src 'self' data:; base-uri 'none'; form-action 'none'; object-src 'none'">
 <meta name="description" content="Free printable training calendar for the marathon or half marathon. Enter your current mileage to get a week-by-week, readiness-based plan with optional pace guidance and calendar export.">
 <link rel="canonical" href="https://evansmith1377.github.io/physical-training-planner/">
 <meta name="theme-color" content="#f3f6f8" media="(prefers-color-scheme: light)">
@@ -499,7 +499,7 @@ footer.site { margin-block-start: 1.5rem; font-size: .85rem; color: var(--muted)
     <button type="button" id="resetBtn">Reset to defaults</button>
     <span class="action-status" role="status"><span id="actionStatus"></span> <button type="button" id="undoBtn" class="linklike" hidden>Undo</button></span>
   </div>
-  <p class="hint" id="copyHint">The link saves all your settings, so you can bookmark it or send it to someone.</p>
+  <p class="hint" id="copyHint">The link saves your plan settings (not your body weight), so you can bookmark it or send it to someone.</p>
   <p class="hint" id="icsHint">Downloads every workout as an all-day event for Google Calendar, Apple Calendar or Outlook. Needs a race or start date. If you change your plan later, delete the old events before importing the new file.</p>
   <p class="hint">Printing tip: if your browser doesn't pick up the orientation automatically, choose it in the print dialog, and turn off headers and footers. On a phone, use your browser's Share → Print to save a PDF.</p>
   <p class="update-note" id="liveStatus" role="status"></p>
@@ -1476,9 +1476,12 @@ function loadInitial() {
   if (Object.keys(fromUrl).length) { applyObject(fromUrl); return; }
   try { const o = JSON.parse(localStorage.getItem(STORE_KEY) || 'null'); if (o && typeof o === 'object') applyObject(o); } catch (e) { /* ignore */ }
 }
+/* Personal data stays out of links that get bookmarked, sent and logged. */
+const PRIVATE_FIELDS = ['weight'];
 function shareUrl() {
   const s = snapshot(), p = new URLSearchParams();
   for (const k in FIELDS) {
+    if (PRIVATE_FIELDS.includes(k)) continue;
     const def = FIELDS[k].def, v = s[k];
     if (String(v) !== String(def) || k === 'units') p.set(k, String(v));
   }

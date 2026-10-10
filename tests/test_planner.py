@@ -148,6 +148,14 @@ def test_shared_link_restores_settings(page, make_page):
     assert other.evaluate("snapshot()") == page.evaluate("snapshot()")
 
 
+def test_shared_link_leaves_out_body_weight(page):
+    """The weight hint promises it stays in the browser, so links never carry it."""
+    fill(page, "#weight", "150")
+    fill(page, "#miles", "30")
+    url = page.evaluate("shareUrl()")
+    assert "miles=30" in url and "weight" not in url
+
+
 def test_reset_and_undo(page):
     pick(page, "units", "metric")
     fill(page, "#weight", "70")

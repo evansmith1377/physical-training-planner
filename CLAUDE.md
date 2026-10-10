@@ -36,7 +36,7 @@ tests/                  pytest + Playwright suite
 7. Form state: `FIELDS` (field name → kind and default), `readCfg`, unit and goal switching, `localStorage` (`ptp.settings.v1`, `ptp.done.v1` for checkmarks), and links that carry settings in the page address.
 8. `render()` → `renderHints()`, `renderSummary()`; actions (copy link, `.ics` download, reset/undo, checkmarks); toggletips (`initTips`).
 
-To add a setting: add it to `FIELDS` and the form markup, read it in `readCfg`, and use it in `computeCalendar`/`render`. It will be saved and included in shared links automatically. To add a goal, add a `GOALS` entry and a radio option. To add a quick-start preset, add a `PRESETS` entry (training fields, distances in miles) and a button; check it builds a plan with no warnings in both unit systems (a test does).
+To add a setting: add it to `FIELDS` and the form markup, read it in `readCfg`, and use it in `computeCalendar`/`render`. It will be saved and included in shared links automatically, unless it's personal data: list those in `PRIVATE_FIELDS`. To add a goal, add a `GOALS` entry and a radio option. To add a quick-start preset, add a `PRESETS` entry (training fields, distances in miles) and a button; check it builds a plan with no warnings in both unit systems (a test does).
 
 ## Front-end conventions
 

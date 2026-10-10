@@ -35,7 +35,7 @@ The page is a single `index.html` with no build step, no dependencies, and no ne
   - An optional reference guide follows the calendar: effort, nutrition, strength exercises, hydration, safety and sources. It starts on a new page, and each topic (like the weekly self-check) stays on one page.
   - A phase's readiness gate prints on the same page as the first week of that phase.
 - **Works everywhere.** Stacked week cards on phones, light and dark mode, keyboard and screen-reader friendly.
-- **Shareable and private.** "Copy link to this plan" puts your settings in the page address. Settings and checkmarks are stored only in your browser, and a Content Security Policy stops the page from contacting any server.
+- **Shareable and private.** "Copy link to this plan" puts your plan settings in the page address; body weight is never included. Settings and checkmarks are stored only in your browser, and a Content Security Policy stops the page from contacting any server.
 
 ## How the plan is built
 
