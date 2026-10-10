@@ -31,7 +31,8 @@ The page is a single `index.html` with no build step, no dependencies, and no ne
 - **Optional pace guidance.** From a recent race, a known easy pace, or a goal race pace, the calendar shows easy, tempo, steady and race-effort paces next to the effort cues.
 - **Print-ready.**
   - Landscape or portrait, US Letter or A4, with the calendar header repeated on every page.
-  - An optional reference guide follows the calendar: effort, nutrition, strength exercises, hydration, safety and sources.
+  - An optional reference guide follows the calendar: effort, nutrition, strength exercises, hydration, safety and sources. It starts on a new page, and each topic (like the weekly self-check) stays on one page.
+  - A phase's readiness gate prints on the same page as the first week of that phase.
 - **Works everywhere.** Stacked week cards on phones, light and dark mode, keyboard and screen-reader friendly.
 - **Shareable and private.** "Copy link to this plan" puts your settings in the page address. Settings and checkmarks are stored only in your browser, and a Content Security Policy stops the page from contacting any server.
 
@@ -71,7 +72,7 @@ The suite serves the page over local HTTP, so the Content Security Policy applie
 | `python scripts/csp_hash.py` | Update the CSP hash after editing the inline `<script>` (`--check` is used in CI) |
 | `python scripts/screenshots.py` | Regenerate `assets/og-image.png` and the README screenshots |
 
-**CI and deploy:** every pull request runs the tests (`.github/workflows/ci.yml`). Each merge to `main` runs them again and deploys `index.html` and `assets/` to GitHub Pages (`.github/workflows/deploy.yml`). Actions are pinned to commit SHAs, and Dependabot proposes monthly updates. One-time setup: **Settings → Pages → Build and deployment → Source: GitHub Actions**.
+**CI and deploy:** every pull request runs the tests (`.github/workflows/ci.yml`). Each merge to `main` runs them again and deploys `index.html` and `assets/` to GitHub Pages (`.github/workflows/deploy.yml`). Actions are pinned to commit SHAs, and Dependabot proposes one grouped update PR per month for the actions and one for the test dependencies, skipping releases less than a week old. One-time setup: **Settings → Pages → Build and deployment → Source: GitHub Actions**.
 
 **Branch protection:** `.github/rulesets/main.json` is a repository ruleset for `main`: changes land only through a squash-merged pull request with the `test` check passing on an up-to-date branch and all review threads resolved, and the branch can't be force-pushed or deleted. GitHub doesn't apply it automatically. Import it once under **Settings → Rules → Rulesets → New ruleset → Import a ruleset**.
 

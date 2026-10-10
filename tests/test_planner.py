@@ -473,6 +473,16 @@ def test_guide_hidden_in_print_when_unchecked(page):
     assert page.evaluate("getComputedStyle(document.querySelector('.guide')).display") == "none"
 
 
+def test_print_keeps_sections_together(page):
+    """Each guide topic (heading plus its table, list or checklist) stays on one page,
+    and a phase's readiness gate isn't left at the foot of a page without its first week."""
+    page.emulate_media(media="print")
+    topics = page.evaluate("""[...document.querySelectorAll('.guide h3')].map(h =>
+        h.parentElement.matches('.topic') ? getComputedStyle(h.parentElement).breakInside : 'no topic')""")
+    assert topics and set(topics) == {"avoid"}
+    assert page.evaluate("getComputedStyle(document.querySelector('#calBody tr.phase-row')).breakAfter") == "avoid"
+
+
 # ---------------------------------------------------------------- accessibility
 
 @pytest.mark.parametrize("mobile,dark", [(False, False), (True, True)])

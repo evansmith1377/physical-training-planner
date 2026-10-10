@@ -45,6 +45,7 @@ To add a setting: add it to `FIELDS` and the form markup, read it in `readCfg`, 
 - Explanations: anything needed to fill in a field correctly is a visible hint. Background "why" goes in an ⓘ toggletip. No hover-only tooltips.
 - Colors come from CSS custom properties: light by default, dark under `prefers-color-scheme`, and print forces light.
 - Layout: `.cal-wrap` is a size container. Below 46rem (screen only) the table becomes stacked cards; print always uses the table. Portrait print tightening lives under `body.print-portrait`.
+- Print pagination: each guide topic is wrapped in `<div class="topic">` (heading plus its content), which print keeps on one page. Wrap any new topic the same way. Phase rows don't break from the week after them.
 
 ## Verifying changes
 
