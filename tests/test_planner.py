@@ -156,6 +156,13 @@ def test_shared_link_leaves_out_body_weight(page):
     assert "miles=30" in url and "weight" not in url
 
 
+def test_opening_a_link_keeps_own_weight_and_ignores_linked_weight(page, base_url):
+    fill(page, "#weight", "150")  # saved in this browser, in lb
+    page.goto(base_url + "?units=metric&miles=40&weight=99")
+    page.wait_for_selector("#calBody tr.week")
+    assert values(page, "miles", "weight") == ["40", "68"]  # own 150 lb in kg; the link's 99 is ignored
+
+
 def test_reset_and_undo(page):
     pick(page, "units", "metric")
     fill(page, "#weight", "70")
@@ -326,8 +333,11 @@ def test_empty_or_zero_weeks_warns(page, typed):
     assert "Plan length isn't set, so this calendar uses 22 weeks" in page.inner_text("#warnings")
 
 
-def test_clamp_notice_uses_clean_label(make_page):
-    page = make_page("?weight=9999")
+def test_clamp_notice_uses_clean_label(page):
+    """Weight is the one optional number field; links can't carry it, so use saved settings."""
+    page.evaluate("localStorage.setItem('ptp.settings.v1', JSON.stringify({ weight: '9999' }))")
+    page.reload()
+    page.wait_for_selector("#calBody tr.week")
     assert "Body weight (lb) was outside the allowed range" in page.inner_text("#warnings")
 
 

@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="color-scheme" content="light dark">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-lUIEiO5X8DviqCQjzxJ9NyxWuaY3NLGx2pp4lrCnHME='; style-src 'unsafe-inline'; img-src 'self' data:; base-uri 'none'; form-action 'none'; object-src 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-S//ADT7sJEAg/P4CtRMHB9jWHsvM8KDFpYPbryHeTAE='; style-src 'unsafe-inline'; img-src 'self' data:; base-uri 'none'; form-action 'none'; object-src 'none'">
 <meta name="description" content="Free printable training calendar for the marathon or half marathon. Enter your current mileage to get a week-by-week, readiness-based plan with optional pace guidance and calendar export.">
 <link rel="canonical" href="https://evansmith1377.github.io/physical-training-planner/">
 <meta name="theme-color" content="#f3f6f8" media="(prefers-color-scheme: light)">
@@ -1109,7 +1109,7 @@ function buildICS(cal, fp) {
 /* =============================== form state =============================== */
 const FIELDS = {
   units: { kind: 'radio', def: 'us' },
-  miles: { kind: 'num', def: '25' }, longrun: { kind: 'num', def: '13' }, weight: { kind: 'num', def: '' },
+  miles: { kind: 'num', def: '25' }, longrun: { kind: 'num', def: '13' }, weight: { kind: 'num', def: '', private: true },
   goal: { kind: 'radio', def: 'marathon' }, weeks: { kind: 'num', def: '22' }, anchorDate: { kind: 'date', def: '' },
   peakMiles: { kind: 'num', def: '38' }, peakLong: { kind: 'num', def: '18' },
   cutEvery: { kind: 'radio', def: '4' }, taper: { kind: 'radio', def: '3' },
@@ -1470,18 +1470,21 @@ function applyObject(o) {
   currentGoal = getField('goal');
 }
 function loadInitial() {
+  let stored = null;
+  try { const o = JSON.parse(localStorage.getItem(STORE_KEY) || 'null'); if (o && typeof o === 'object') stored = o; } catch (e) { /* ignore */ }
   const params = new URLSearchParams(location.search);
   const fromUrl = {};
-  for (const k in FIELDS) if (params.has(k)) fromUrl[k] = params.get(k);
-  if (Object.keys(fromUrl).length) { applyObject(fromUrl); return; }
-  try { const o = JSON.parse(localStorage.getItem(STORE_KEY) || 'null'); if (o && typeof o === 'object') applyObject(o); } catch (e) { /* ignore */ }
+  for (const k in FIELDS) if (params.has(k) && !FIELDS[k].private) fromUrl[k] = params.get(k);
+  if (!Object.keys(fromUrl).length) { if (stored) applyObject(stored); return; }
+  /* Private fields never come from a link; keep this browser's own value, in the link's units. */
+  const w = Number(stored?.weight), units = fromUrl.units ?? FIELDS.units.def;
+  if (stored?.weight && Number.isFinite(w)) fromUrl.weight = stored.units === units ? w : Math.round(units === 'metric' ? w / LB_PER_KG : w * LB_PER_KG);
+  applyObject(fromUrl);
 }
-/* Personal data stays out of links that get bookmarked, sent and logged. */
-const PRIVATE_FIELDS = ['weight'];
 function shareUrl() {
   const s = snapshot(), p = new URLSearchParams();
   for (const k in FIELDS) {
-    if (PRIVATE_FIELDS.includes(k)) continue;
+    if (FIELDS[k].private) continue;  /* personal data stays out of links that get bookmarked, sent and logged */
     const def = FIELDS[k].def, v = s[k];
     if (String(v) !== String(def) || k === 'units') p.set(k, String(v));
   }
