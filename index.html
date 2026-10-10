@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="color-scheme" content="light dark">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-rl9WNYA7kcPhbCAHN3XtE420Pw9gL8MjuT11qjF7/G8='; style-src 'unsafe-inline'; img-src 'self' data:; base-uri 'none'; form-action 'none'; object-src 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-XMAwel6xRocPgVmbin6BAHhmCZfEFagMHZBUEzQ/AuI='; style-src 'unsafe-inline'; img-src 'self' data:; base-uri 'none'; form-action 'none'; object-src 'none'">
 <meta name="description" content="Free printable training calendar for the marathon or half marathon. Enter your current mileage to get a week-by-week, readiness-based plan with optional pace guidance and calendar export.">
 <link rel="canonical" href="https://evansmith1377.github.io/physical-training-planner/">
 <meta name="theme-color" content="#f3f6f8" media="(prefers-color-scheme: light)">
@@ -276,7 +276,7 @@ footer.site { margin-block-start: 1.5rem; font-size: .85rem; color: var(--muted)
       </div>
       <div class="field">
         <label for="miles">Usual weekly distance (<span data-u="dist">mi</span>)</label>
-        <input id="miles" name="miles" type="number" inputmode="decimal" min="12" max="45" step="1" value="25" required enterkeyhint="next" aria-describedby="milesHint milesErr">
+        <input id="miles" name="miles" type="number" inputmode="decimal" min="12" max="99" step="1" value="25" required enterkeyhint="next" aria-describedby="milesHint milesErr">
         <span class="hint" id="milesHint">Your average over the last 3–4 weeks, not your best week.</span>
         <span class="err" id="milesErr" data-range="miles"></span>
       </div>
@@ -323,7 +323,7 @@ footer.site { margin-block-start: 1.5rem; font-size: .85rem; color: var(--muted)
           <button type="button" class="tip" popovertarget="tipPeakMiles" aria-label="About peak weekly distance">i</button>
           <div id="tipPeakMiles" popover class="tipbox">The biggest week the plan builds to. You don't need high mileage to finish a first marathon; more volume can help performance but adds load and injury risk. You only reach the peak if earlier weeks go well.</div>
         </div>
-        <input id="peakMiles" name="peakMiles" type="number" inputmode="decimal" min="25" max="45" step="1" value="38" required enterkeyhint="next" aria-describedby="peakMilesHint peakMilesErr">
+        <input id="peakMiles" name="peakMiles" type="number" inputmode="decimal" min="20" max="99" step="1" value="38" required enterkeyhint="next" aria-describedby="peakMilesHint peakMilesErr">
         <span class="hint" id="peakMilesHint" data-hint="peakMiles"></span>
         <span class="err" id="peakMilesErr" data-range="peakMiles"></span>
       </div>
@@ -692,8 +692,8 @@ const GOALS = {
 
 /* Input ranges per unit system (distance fields only). */
 const RANGES = {
-  us:     { miles: [12, 45], longrun: [4, 20], peakMiles: [20, 45], peakLong: [8, 20], weight: [70, 550] },
-  metric: { miles: [19, 72], longrun: [6, 32], peakMiles: [32, 72], peakLong: [13, 32], weight: [32, 250] }
+  us:     { miles: [12, 99], longrun: [4, 20], peakMiles: [20, 99], peakLong: [8, 20], weight: [70, 550] },
+  metric: { miles: [19, 160], longrun: [6, 32], peakMiles: [32, 160], peakLong: [13, 32], weight: [32, 250] }
 };
 
 /* =============================== unit formatting =============================== */
@@ -1016,7 +1016,7 @@ function buildWeekDays(wk, layout, cfg, U, paces, G) {
     total += runMi ? U.val(runMi) : 0;
     cells.push({ cls, t, det, pace, s, workout: role !== 'rest' && !(role === 'off' && !s) });
   }
-  return { cells, total };
+  return { cells, total, maxDay: Math.max(0, ...Object.values(dist)) };
 }
 
 /* Everything the calendar, summary and .ics export need, from one config. */
@@ -1040,7 +1040,9 @@ function computeCalendar(cfg) {
   if (weeksAway !== null && weeksAway < 1) anchorWarn = 'That race date has already passed. Pick a future date, or clear it to use week numbers only.';
   else if (weeksAway !== null && weeksAway < G.minWeeks) anchorWarn = `Your race is only ${weeksAway} week${weeksAway > 1 ? 's' : ''} away, shorter than the ${G.minWeeks}-week minimum for a ${G.name} plan. Consider a later race.`;
   const noSharpen = raceLayout.Q === -1;
-  return { cfg, U, G, plan, paces, ws, cols, week1, raceDay, dateOf, weeks, weeksAway, anchorWarn, noSharpen };
+  /* High volume on few days (or a short long run) can make a weekday run longer than the long run. */
+  const longWeekday = weeks.some(({ wk, maxDay }) => !wk.race && maxDay > wk.long);
+  return { cfg, U, G, plan, paces, ws, cols, week1, raceDay, dateOf, weeks, weeksAway, anchorWarn, noSharpen, longWeekday };
 }
 const phaseName = (phase, G) => phase === 3 && G.phase3 ? G.phase3 : PHASE_NAMES[phase];
 
@@ -1345,6 +1347,7 @@ function renderSummary(cal) {
   warns.push(...notices);
   if (cfg.restMoved) warns.push(`Your rest day can't be the long-run day, so it moved to ${DAY_NAMES[cfg.restDay]}.`);
   if (cfg.peakMiles < cfg.startMiles - 0.1) warns.push(`Peak weekly distance is lower than your usual week, so the plan holds you at about ${U.D(cfg.startMiles)}. Raise the peak if you want the plan to build.`);
+  if (cal.longWeekday) warns.push(`Some weekday runs are longer than that week's long run. ${cfg.days < 6 ? 'Add a running day or lower' : 'Lower'} peak weekly distance, or check your current long run.`);
   if (cfg.peakLong < cfg.startLong - 0.1) warns.push(`Peak long run (${U.D(cfg.peakLong)}) is shorter than your current long run (${U.D(cfg.startLong)}). The plan won't push it past your current distance; check that both numbers are right.`);
   if (cfg.mpPace && paces.source === 'race' && cfg.raceMins && G.race) {
     const pred = predictPace(fitnessIndex(cfg.raceDist, cfg.raceMins), G.meters);

@@ -42,6 +42,7 @@ All distances are calculated in miles and converted for display.
 
 | Rule | Value |
 |---|---|
+| Weekly distance inputs | Usual 12–99 mi (19–160 km); peak 20–99 mi (32–160 km) |
 | Phase 1 (Stabilize) | 3 weeks at your current distance and long run (long run up to 55% of the week) |
 | Weekly build | +8% per build week (min 1.5 mi, max 3 mi), up to your peak |
 | Long run | +1 mi per build week at most and ≤ 50% of the week. Once at the peak, it alternates between the peak and about 85% of it. Capped at 20 mi (marathon), 14 mi (half), 16 mi (durability) |
@@ -51,7 +52,7 @@ All distances are calculated in miles and converted for display.
 | Quality | Strides in Phase 1 and cutbacks; progressive tempo in Phase 2; alternating tempo and race-effort sessions in Phase 3 |
 | Minimum length | Marathon 10 weeks, half 8, durability 6 |
 
-When inputs conflict, the page shows a warning instead of silently adjusting. Examples: a plan too short or too long, a rest day on the long-run day, a peak below your current mileage, a taper that doesn't fit the goal, out-of-range values from a shared link, a race date that has passed, or a projected base that misses the readiness gate.
+When inputs conflict, the page shows a warning instead of silently adjusting. Examples: a plan too short or too long, a rest day on the long-run day, a peak below your current mileage, weekday runs longer than the long run (high volume on few days), a taper that doesn't fit the goal, out-of-range values from a shared link, a race date that has passed, or a projected base that misses the readiness gate.
 
 **Paces** use the Daniels/Gilbert race-equivalency equations: easy covers about 62–70% of aerobic capacity and tempo about 88%. The race-effort range is the predicted pace plus a buffer of 15 s/mi for the marathon or 6 s/mi for the half. These formulas tend to be optimistic for first marathons, and the page says so.
 
