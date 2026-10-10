@@ -18,6 +18,7 @@ The page is a single `index.html` with no build step, no dependencies, and no ne
   - *Half marathon:* 1–2 week taper.
   - *Build durability:* a base of up to 35 mi/week and 16 mi long runs, with no race.
 - **Readiness-based phases:** Stabilize, Build durability, Race-specific, and Taper. Each phase opens with the "readiness gate" to meet before moving on, and repeating a week is expected.
+- **Quick-start presets.** Six starting points, from Sofa Starter (a gentle first half) to Mileage Monster (60+ mi weeks), plus Emily's Starting Point, the defaults. A preset sets the training fields only; your units, dates and paces stay, and Undo brings your settings back.
 - **Your week, your way.**
   - 4, 5, or 6 running days.
   - Saturday or Sunday long run, and any rest day.
