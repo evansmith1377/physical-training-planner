@@ -213,6 +213,8 @@ footer.site { margin-block-start: 1.5rem; font-size: .85rem; color: var(--muted)
   .calendar thead { display: table-header-group; }
   .calendar tfoot { display: table-footer-group; }
   .calendar tr { break-inside: avoid; }
+  .calendar tr.phase-row { break-after: avoid; } /* a phase's readiness gate stays with its first week */
+  .summary, .warn { break-inside: avoid; }
   .wkcell .n { font-size: 9pt; }
   .wkcell .ph { font-size: 6.6pt; }
   .calendar tfoot td { font-size: 6.8pt; }
@@ -230,7 +232,8 @@ footer.site { margin-block-start: 1.5rem; font-size: .85rem; color: var(--muted)
   .guide { break-before: page; font-size: 8.5pt; }
   .guide th, .guide td { font-size: 8pt; padding: 3pt 5pt; }
   .guide h2, .guide h3 { break-after: avoid; }
-  .guide table, .guide .note { break-inside: avoid; }
+  /* Keep each topic (heading, table, list, note) on one page. A topic taller than a page still splits, so keep its parts whole too. */
+  .guide .topic, .guide table, .guide .note, .checklist { break-inside: avoid; }
   body.no-guide .guide { display: none; }
   /* Portrait: narrower page, so tighten the 7-day grid */
   body.print-portrait .calendar { font-size: 6.4pt; }
@@ -525,6 +528,7 @@ footer.site { margin-block-start: 1.5rem; font-size: .85rem; color: var(--muted)
 <section class="guide" aria-labelledby="guideHeading">
 <h2 id="guideHeading">Reference guide</h2>
 
+<div class="topic">
 <h3>Effort and pace</h3>
 <div class="scroll"><table>
 <thead><tr><th scope="col">Type</th><th scope="col">Effort cue</th><th scope="col">How to use it</th></tr></thead>
@@ -536,7 +540,9 @@ footer.site { margin-block-start: 1.5rem; font-size: .85rem; color: var(--muted)
 <tr><td>Race effort (marathon or half)</td><td>Controlled, sustainable</td><td>Introduced in the race-specific phase. Treat suggested paces as a starting point and confirm them in training.</td></tr>
 </tbody></table></div>
 <p><strong>About suggested paces:</strong> a recent race result is useful evidence of fitness, but equivalency formulas tend to be optimistic for the marathon, especially for first-timers or runners under about 40 mi (65 km) per week. Start marathon-effort work at the slower end of the range, and never turn easy days into pace tests.</p>
+</div>
 
+<div class="topic">
 <h3>Readiness gates (the calendar assumes you pass these)</h3>
 <ul>
 <li><strong>Into Build:</strong> several consistent weeks, normal sleep/appetite/mood, no persistent pain, long runs recovered within ~24–48 h.</li>
@@ -544,7 +550,9 @@ footer.site { margin-block-start: 1.5rem; font-size: .85rem; color: var(--muted)
 <li><strong>If you don't pass:</strong> repeat the previous week (or block) and slide the remaining weeks back. There's no penalty for repeating.</li>
 <li><strong>Peak long run</strong> (marathon 16–20 mi / 26–32 km; half 10–13 mi / 16–21 km) is a ceiling, not a requirement. Don't attempt the upper end if shorter peaks leave you depleted or sore.</li>
 </ul>
+</div>
 
+<div class="topic">
 <h3>Nutrition</h3>
 <ul>
 <li><strong>No fixed calorie target</strong> without age, sex, height, weight, health context, and activity. Eat enough for daily needs plus training; avoid intentional restriction while building endurance unless supervised.</li>
@@ -553,7 +561,9 @@ footer.site { margin-block-start: 1.5rem; font-size: .85rem; color: var(--muted)
 <li><strong>Before long runs:</strong> familiar carb-rich meal or snack 1–4 h before. <strong>During runs over 75–90 min:</strong> practice 30–60 g carbs/hour; build toward more only gradually. <strong>After:</strong> carbs + protein + fluids.</li>
 <li><strong>Low-energy warning signs:</strong> persistent fatigue, declining performance, irritability, frequent illness, poor sleep, recurrent injury, cold sensitivity, menstrual changes, reduced libido. Reduce load and consult a clinician or sports dietitian.</li>
 </ul>
+</div>
 
+<div class="topic">
 <h3>Strength workouts</h3>
 <div class="scroll"><table>
 <thead><tr><th scope="col">Workout A — squat / calf / trunk</th><th scope="col">Dose</th><th scope="col">Workout B — hinge / single-leg / upper</th><th scope="col">Dose</th></tr></thead>
@@ -569,7 +579,9 @@ footer.site { margin-block-start: 1.5rem; font-size: .85rem; color: var(--muted)
 <li>Pair strength with easy runs; never hard lower-body work the day before the long run. One consistent session beats two that hurt your running.</li>
 <li>Muscle effort is expected; sharp, joint, or worsening pain, numbness, or a gait change is not — stop and get advice.</li>
 </ul>
+</div>
 
+<div class="topic">
 <h3>Hydration</h3>
 <div class="scroll"><table>
 <tbody>
@@ -579,7 +591,9 @@ footer.site { margin-block-start: 1.5rem; font-size: .85rem; color: var(--muted)
 <tr><th scope="row">Avoid</th><td>Gaining weight during exercise from drinking — overhydration can cause dangerous hyponatremia.</td></tr>
 </tbody></table></div>
 <p class="note"><strong>Possible heat illness:</strong> unusual weakness, dizziness, nausea, headache, chills in heat, or worsening coordination — stop, cool down, get help as needed. Confusion, collapse, seizure, or altered mental status is an emergency: call emergency services and start rapid cooling.</p>
+</div>
 
+<div class="topic">
 <h3>When to modify, stop, or seek care</h3>
 <ul>
 <li><strong>Modify or rest:</strong> poor sleep, illness, heavy legs that don't improve in warm-up, soreness that changes your stride, fatigue lasting more than 1–2 days.</li>
@@ -587,7 +601,9 @@ footer.site { margin-block-start: 1.5rem; font-size: .85rem; color: var(--muted)
 <li><strong>Urgent care:</strong> chest pressure/pain, fainting, severe or unusual shortness of breath, palpitations with dizziness, confusion, collapse.</li>
 <li><strong>Check with a clinician first</strong> if you have cardiovascular, metabolic, kidney, or other significant conditions, take medicines affecting heart rate or fluid balance, are pregnant/postpartum, or have a history of eating disorder or stress fractures.</li>
 </ul>
+</div>
 
+<div class="topic">
 <h3>Weekly self-check</h3>
 <ul class="checklist">
 <li>□ I slept reasonably well.</li>
@@ -602,7 +618,9 @@ footer.site { margin-block-start: 1.5rem; font-size: .85rem; color: var(--muted)
 <li>□ I'm willing to hold or reduce load if needed.</li>
 </ul>
 <p><strong>Decision rule:</strong> several "no" answers → repeat or reduce the week. Persistent or worsening symptoms → stop and seek professional advice.</p>
+</div>
 
+<div class="topic">
 <h3>Evidence and references</h3>
 <ol>
 <li>Damsted C, et al. Changes in training load and running-related injuries: systematic review. <em>Int J Sports Phys Ther</em> (2018). <a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC6253751/" rel="noopener">Full text</a></li>
@@ -613,6 +631,7 @@ footer.site { margin-block-start: 1.5rem; font-size: .85rem; color: var(--muted)
 <li>Wang Z, et al. Effects of tapering on performance in endurance athletes: meta-analysis. <em>PLOS ONE</em> (2023). <a href="https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0282838" rel="noopener">Full text</a></li>
 </ol>
 <p class="muted">These sources inform the plan but can't determine individual medical risk or guarantee injury prevention. For exact calorie needs, a personalized pace prescription, or a race-specific plan, work with a credentialed professional.</p>
+</div>
 </section>
 
 <footer class="site">Your settings and checkmarks stay in this browser; nothing is sent to a server. General fitness guidance only — not medical advice.</footer>

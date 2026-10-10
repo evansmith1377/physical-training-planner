@@ -1,11 +1,24 @@
 # Keeps the SHA-pinned GitHub Actions and the test dependencies up to date.
+# Each ecosystem's updates arrive as one grouped PR a month instead of one PR per
+# dependency. The cooldown skips releases younger than a week, which gives a bad
+# or compromised release time to be caught and pulled before we pick it up.
 version: 2
 updates:
   - package-ecosystem: github-actions
     directory: /
     schedule:
       interval: monthly
+    cooldown:
+      default-days: 7
+    groups:
+      github-actions:
+        patterns: ["*"]
   - package-ecosystem: pip
     directory: /
     schedule:
       interval: monthly
+    cooldown:
+      default-days: 7
+    groups:
+      test-dependencies:
+        patterns: ["*"]
