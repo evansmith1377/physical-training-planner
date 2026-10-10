@@ -6,6 +6,7 @@ from datetime import datetime
 from pathlib import Path
 
 import pytest
+from playwright.sync_api import expect
 from axe_playwright_python.sync_playwright import Axe
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -72,10 +73,17 @@ def test_defaults_render_marathon_plan(page):
     assert peak == [18, 38]
 
 
-def test_week_totals_equal_sum_of_days(page):
+@pytest.mark.parametrize("query,unit", [
+    ("", "mi"),
+    ("?units=metric&miles=40&longrun=21&peakMiles=61&peakLong=29", "km"),
+    ("?goal=half&days=4", "mi"),
+    ("?units=metric&goal=half&days=6&miles=40&longrun=21&peakMiles=48&peakLong=21", "km"),
+])
+def test_week_totals_equal_sum_of_days(make_page, query, unit):
+    page = make_page(query)
     for row in page.locator("tr.week").all():
         total = float(re.match(r"([\d.]+)", row.locator(".tot").inner_text()).group(1))
-        days = sum(float(m) for m in re.findall(r"· ([\d.]+) mi", " ".join(row.locator("td:not(.race) .t").all_inner_texts())))
+        days = sum(float(m) for m in re.findall(rf"· ([\d.]+) {unit}", " ".join(row.locator("td:not(.race) .t").all_inner_texts())))
         assert abs(total - days) < 0.01, row.locator(".n").inner_text()
 
 
@@ -158,11 +166,15 @@ def test_rest_day_cannot_match_long_day(page):
 
 
 def test_toggletip_opens_and_closes(page):
-    page.click('button[popovertarget="tipCut"]')
-    assert page.evaluate("document.getElementById('tipCut').matches(':popover-open')")
-    assert page.get_attribute('button[popovertarget="tipCut"]', "aria-expanded") == "true"
+    # expect() polls from outside the page: the popover's toggle event is async, and the CSP blocks
+    # the eval that wait_for_function would need.
+    btn, tip = page.locator('button[popovertarget="tipCut"]'), page.locator("#tipCut")
+    btn.click()
+    expect(tip).to_be_visible()
+    expect(btn).to_have_attribute("aria-expanded", "true")
     page.keyboard.press("Escape")
-    assert not page.evaluate("document.getElementById('tipCut').matches(':popover-open')")
+    expect(tip).to_be_hidden()
+    expect(btn).to_have_attribute("aria-expanded", "false")
 
 
 # ---------------------------------------------------------------- goals
@@ -192,6 +204,33 @@ def test_durability_build(page):
     assert page.is_hidden("#taperField")
     fill(page, "#peakMiles", "45")
     assert "cap weekly distance at 35 mi" in page.inner_text("#summary")
+
+
+@pytest.mark.parametrize("query,expect", [
+    ("?goal=half&taper=3", "uses a 1 or 2-week taper"),
+    ("?miles=100", "was outside the allowed range, so it's set to 45"),
+    ("?weeks=99", "was outside the allowed range, so it's set to 30"),
+])
+def test_link_adjustments_are_announced(make_page, query, expect):
+    page = make_page(query)
+    assert expect in page.inner_text("#warnings")
+    fill(page, "#longrun", "12")  # notices clear once the visitor edits something
+    assert expect not in page.inner_text("#warnings")
+
+
+def test_typed_weeks_below_minimum_warns(page):
+    pick(page, "goal", "base")
+    fill(page, "#weeks", "3")
+    assert "needs at least 6 weeks" in page.inner_text("#warnings")
+    assert page.locator("tr.week").count() == 6
+
+
+def test_switching_race_and_durability_clears_the_date(make_page):
+    page = make_page(now=NOW)
+    fill(page, "#anchorDate", "2027-03-13")
+    pick(page, "goal", "base")
+    assert values(page, "anchorDate") == [""]
+    assert "Cleared the race date" in page.inner_text("#actionStatus")
 
 
 def test_too_few_weeks_warns_and_uses_minimum(page):
@@ -251,6 +290,24 @@ def test_race_date_sets_week_dates_and_race_day(make_page):
     assert page.inner_text('tr.week[data-week="1"] .dates') == "Oct 5 – Oct 11"
 
 
+@pytest.mark.parametrize("race,day", [
+    ("2027-03-08", "Monday"), ("2027-03-09", "Tuesday"), ("2027-03-10", "Wednesday"),
+    ("2027-03-11", "Thursday"), ("2027-03-12", "Friday"), ("2027-03-13", "Saturday"), ("2027-03-14", "Sunday"),
+])
+def test_race_week_sharpening_is_at_least_3_days_out(make_page, race, day):
+    page = make_page(now=NOW)
+    fill(page, "#anchorDate", race)  # long runs default to Saturday
+    weeks = int(values(page, "weeks")[0])
+    heads = page.locator("#calHead th").all_inner_texts()[1:]
+    assert heads[-1] == day and "RACE" in cell_text(page, weeks, day)  # race day ends the week
+    sharpen = [d for d in heads if "at least 3 days before the race" in cell_text(page, weeks, d)]
+    assert len(sharpen) <= 1
+    for d in sharpen:
+        assert heads.index(day) - heads.index(d) >= 3
+    before = cell_text(page, weeks, heads[-2])  # the day before the race is a shakeout or a day off
+    assert before.startswith(("Shakeout", "Rest", "Off")), before
+
+
 def test_past_race_date_warns(make_page):
     page = make_page(now=NOW)
     fill(page, "#anchorDate", "2026-01-04")
@@ -287,6 +344,43 @@ def test_ics_export(make_page):
     assert "downloaded with" in page.inner_text("#actionStatus")
 
 
+def test_ics_events_match_calendar_and_escape_text(make_page):
+    page = make_page(now=NOW)
+    fill(page, "#anchorDate", "2027-03-13")
+    with page.expect_download() as dl:
+        page.click("#icsBtn")
+    lines = unfold(Path(dl.value.path()).read_bytes().decode("utf-8"))
+    events, ev = [], {}
+    for line in lines:
+        if line == "BEGIN:VEVENT":
+            ev = {}
+        elif line == "END:VEVENT":
+            events.append(ev)
+        elif ":" in line:
+            k, v = line.split(":", 1)
+            ev[k] = v
+    # Every event lands on the date of the calendar cell it came from.
+    cells = page.evaluate("""() => { const cal = computeCalendar(readCfg()); const out = {};
+        for (const { wk, cells } of cal.weeks) cells.forEach((c, d) => { if (c.workout) out[ymd(cal.dateOf(wk.n, d))] = c.t; });
+        return out; }""")
+    got = {e["DTSTART;VALUE=DATE"]: e["SUMMARY"].replace("\\,", ",").replace("\\;", ";") for e in events}
+    assert got == cells
+    # Text values never contain unescaped separators.
+    for e in events:
+        for key in ("SUMMARY", "DESCRIPTION"):
+            assert not re.search(r"(?<!\\)[;,]", e[key]), e[key]
+    assert any("\\;" in e["DESCRIPTION"] for e in events)
+    # Re-exporting the same plan gives the same UIDs; a different plan gives different ones.
+    uids = {e["UID"] for e in events}
+    with page.expect_download() as dl2:
+        page.click("#icsBtn")
+    assert uids == {l[4:] for l in unfold(Path(dl2.value.path()).read_bytes().decode("utf-8")) if l.startswith("UID:")}
+    fill(page, "#miles", "30")
+    with page.expect_download() as dl3:
+        page.click("#icsBtn")
+    assert not uids & {l[4:] for l in unfold(Path(dl3.value.path()).read_bytes().decode("utf-8")) if l.startswith("UID:")}
+
+
 def test_ics_needs_a_date(page):
     page.click("#icsBtn")
     assert "Add a race date first" in page.inner_text("#actionStatus")
@@ -307,6 +401,29 @@ def test_checkmarks_persist_and_clear(page):
     settle(page)
     assert page.locator("input[data-done]:checked").count() == 0
     assert page.is_hidden("#clearDoneBtn")
+
+
+def test_checkmarks_follow_the_workout_not_the_grid(make_page):
+    page = make_page(now=NOW)
+    long_box = f'tr.week[data-week="1"] > :nth-child({column(page, "Saturday")}) input[data-done]'
+    page.check(long_box)
+    pick(page, "goal", "half")  # week 1 Saturday is still the long run: tick stays
+    assert page.is_checked(long_box)
+    pick(page, "longDay", "6")  # Saturday is no longer the long run: no tick on whatever is there now
+    assert page.locator("input[data-done]:checked").count() == 0
+    assert page.is_hidden("#clearDoneBtn")  # nothing ticked on screen
+    pick(page, "longDay", "5")  # back again: the tick returns
+    assert page.is_checked(long_box)
+
+
+def test_dated_checkmarks_survive_plan_length_changes(make_page):
+    page = make_page(now=NOW)
+    fill(page, "#anchorDate", "2027-03-13")
+    race_box = f'tr.week[data-week="22"] > :nth-child({column(page, "Saturday")}) input[data-done]'
+    page.check(race_box)
+    fill(page, "#weeks", "20")  # race moves to week 20 but keeps its date
+    assert page.is_checked(f'tr.week[data-week="20"] > :nth-child({column(page, "Saturday")}) input[data-done]')
+    assert page.locator("input[data-done]:checked").count() == 1
 
 
 # ---------------------------------------------------------------- print

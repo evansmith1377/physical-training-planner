@@ -25,8 +25,8 @@ The page is a single `index.html` with no build step, no dependencies, and no ne
   - Cutbacks every 3rd or 4th week.
 - **Optional race or start date.** Each week gets real dates, and a one-click "Use N weeks" fits the plan to your race.
   - With a race date, weeks end on race day. If the race isn't on your long-run day, race week moves the race to the right day.
-- **Add to calendar.** Downloads an `.ics` file with every workout as an all-day event, for Google Calendar, Apple Calendar or Outlook.
-- **Checkmarks.** Tick off workouts on screen; they're saved in your browser and print as checkboxes.
+- **Add to calendar.** Downloads an `.ics` file with every workout as an all-day event, for Google Calendar, Apple Calendar or Outlook. Re-importing the same plan doesn't create duplicates; if you change the plan, delete the old events first.
+- **Checkmarks.** Tick off workouts on screen; they're saved in your browser and print as checkboxes (ticked ones print ticked). A tick belongs to its day and type of workout, so changing the plan never moves it onto a different workout.
 - **US or metric units.** Switching converts the values you've already entered.
 - **Optional pace guidance.** From a recent race, a known easy pace, or a goal race pace, the calendar shows easy, tempo, steady and race-effort paces next to the effort cues.
 - **Print-ready.**
@@ -50,7 +50,7 @@ All distances are calculated in miles and converted for display.
 | Quality | Strides in Phase 1 and cutbacks; progressive tempo in Phase 2; alternating tempo and race-effort sessions in Phase 3 |
 | Minimum length | Marathon 10 weeks, half 8, durability 6 |
 
-When inputs conflict, the page shows a warning instead of silently adjusting. Examples: a plan too short, a rest day on the long-run day, a peak below your current mileage, a race date that has passed, or a projected base that misses the readiness gate.
+When inputs conflict, the page shows a warning instead of silently adjusting. Examples: a plan too short or too long, a rest day on the long-run day, a peak below your current mileage, a taper that doesn't fit the goal, out-of-range values from a shared link, a race date that has passed, or a projected base that misses the readiness gate.
 
 **Paces** use the Daniels/Gilbert race-equivalency equations: easy covers about 62–70% of aerobic capacity and tempo about 88%. The race-effort range is the predicted pace plus a buffer of 15 s/mi for the marathon or 6 s/mi for the half. These formulas tend to be optimistic for first marathons, and the page says so.
 
@@ -71,7 +71,7 @@ The suite serves the page over local HTTP, so the Content Security Policy applie
 | `python scripts/csp_hash.py` | Update the CSP hash after editing the inline `<script>` (`--check` is used in CI) |
 | `python scripts/screenshots.py` | Regenerate `assets/og-image.png` and the README screenshots |
 
-**CI and deploy:** every pull request runs the tests (`.github/workflows/ci.yml`). Each merge to `main` runs them again and deploys `index.html` and `assets/` to GitHub Pages (`.github/workflows/deploy.yml`). One-time setup: **Settings → Pages → Build and deployment → Source: GitHub Actions**.
+**CI and deploy:** every pull request runs the tests (`.github/workflows/ci.yml`). Each merge to `main` runs them again and deploys `index.html` and `assets/` to GitHub Pages (`.github/workflows/deploy.yml`). Actions are pinned to commit SHAs, and Dependabot proposes monthly updates. One-time setup: **Settings → Pages → Build and deployment → Source: GitHub Actions**.
 
 To host the page elsewhere, copy `index.html` and the `assets/` folder to any static host. If the address changes, update the canonical and `og:` URLs in `index.html`.
 

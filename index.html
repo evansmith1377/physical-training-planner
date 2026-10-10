@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="color-scheme" content="light dark">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-P1qQv+iMXuOyRdfacBiOcOIUZdeKdXvcTfUVe9mSc08='; style-src 'unsafe-inline'; img-src 'self' data:; base-uri 'none'; form-action 'none'; object-src 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-8uBrMEPeHDUim6BkoXAh/3J+VwldDuz2IcbIpoxCLls='; style-src 'unsafe-inline'; img-src 'self' data:; base-uri 'none'; form-action 'none'; object-src 'none'">
 <meta name="description" content="Free printable training calendar for the marathon or half marathon. Enter your current mileage to get a week-by-week, readiness-based plan with optional pace guidance and calendar export.">
 <link rel="canonical" href="https://evansmith1377.github.io/physical-training-planner/">
 <meta name="theme-color" content="#f3f6f8" media="(prefers-color-scheme: light)">
@@ -479,7 +479,7 @@ footer.site { margin-block-start: 1.5rem; font-size: .85rem; color: var(--muted)
     <span class="action-status" role="status"><span id="actionStatus"></span> <button type="button" id="undoBtn" class="linklike" hidden>Undo</button></span>
   </div>
   <p class="hint" id="copyHint">The link saves all your settings, so you can bookmark it or send it to someone.</p>
-  <p class="hint" id="icsHint">Downloads every workout as an all-day event for Google Calendar, Apple Calendar or Outlook. Needs a race or start date.</p>
+  <p class="hint" id="icsHint">Downloads every workout as an all-day event for Google Calendar, Apple Calendar or Outlook. Needs a race or start date. If you change your plan later, delete the old events before importing the new file.</p>
   <p class="hint">Printing tip: if your browser doesn't pick up the orientation automatically, choose it in the print dialog, and turn off headers and footers. On a phone, use your browser's Share → Print to save a PDF.</p>
   <p class="update-note" id="liveStatus" role="status"></p>
 </form>
@@ -715,6 +715,9 @@ const addDays = (d, n) => new Date(d.getFullYear(), d.getMonth(), d.getDate() + 
 const weekStartOf = (d, ws) => addDays(d, -mod7(dayIdx(d) - ws));
 const weeksBetween = (a, b) => Math.round((b - a) / 864e5 / 7);
 const fmtDate = d => d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+/* A checkmark belongs to a day (its date if the plan has dates) and the kind of workout on it,
+   so changing the plan doesn't move ticks onto different workouts. */
+const doneKey = (n, d, date, cls) => `${date ? ymd(date) : `w${n}d${d}`}:${cls}`;
 const ymd = d => `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, '0')}${String(d.getDate()).padStart(2, '0')}`;
 
 /* =============================== pace model ===============================
@@ -815,9 +818,18 @@ function moveRaceDay(layout, longDay, raceDow) {
   const roles = layout.roles.slice();
   [roles[longDay], roles[raceDow]] = [roles[raceDow], roles[longDay]];
   roles.forEach((r, d) => { if (r === 'prelong') roles[d] = 'easy'; });
+  /* Race week ends on race day, so every other day is 1–6 days before it. Keep the short
+     sharpening session 3+ days out (or drop it if no easy day fits). */
+  const daysBefore = d => mod7(raceDow - d);
+  let Q = roles.indexOf('quality');
+  if (Q >= 0 && daysBefore(Q) < 3) {
+    roles[Q] = 'easy';
+    Q = [4, 3, 5].map(n => mod7(raceDow - n)).find(d => ['easy', 'medium'].includes(roles[d])) ?? -1;
+    if (Q >= 0) roles[Q] = 'quality';
+  }
   const pre = mod7(raceDow - 1);
-  if (['easy', 'medium', 'recovery', 'quality'].includes(roles[pre])) roles[pre] = 'prelong';
-  return { ...layout, roles, pre };
+  if (['easy', 'medium', 'recovery'].includes(roles[pre])) roles[pre] = 'prelong';
+  return { ...layout, roles, Q, pre };
 }
 
 /* =============================== week-by-week progression (all in miles) =============================== */
@@ -966,7 +978,7 @@ function buildWeekDays(wk, layout, cfg, U, paces, G) {
           cls = 'quality'; t = `${cap(G.effort)} · ${U.D(runMi)}`;
           det = `${wk.q.reps > 1 ? wk.q.reps + ' × ' : ''}${U.D(wk.q.mi)} @ ${G.effort}; rest easy`;
           pace = mpP ? `${G.effortShort} ${mpP}` : '';
-        } else { cls = 'quality'; t = `Easy · ${U.D(runMi)}`; det = `3 × 3 min @ ${G.effort}, early in the week`; pace = mpP ? `${G.effortShort} ${mpP}` : ''; }
+        } else { cls = 'quality'; t = `Easy · ${U.D(runMi)}`; det = `3 × 3 min @ ${G.effort}, at least 3 days before the race`; pace = mpP ? `${G.effortShort} ${mpP}` : ''; }
       } else if (role === 'prelong') {
         if (wk.race) { t = `Shakeout · ${U.D(2)}`; det = 'Optional — or rest. Lay out race gear.'; }
         else { t = `Easy · ${U.D(runMi)}`; det = 'Short & gentle; no strength or speed.'; pace = easyP; }
@@ -1014,7 +1026,16 @@ function computeCalendar(cfg) {
 const phaseName = (phase, G) => phase === 3 && G.phase3 ? G.phase3 : PHASE_NAMES[phase];
 
 /* =============================== calendar export (.ics) =============================== */
-function buildICS(cal) {
+/* Short hash of the plan-shaping settings: re-importing the same plan reuses UIDs (no duplicates),
+   while a different plan never collides with an earlier import. */
+function planFingerprint() {
+  const s = snapshot();
+  for (const k of ['weekStart', 'paper', 'orientation', 'includeGuide', 'weight']) delete s[k];
+  let h = 2166136261;
+  for (const ch of JSON.stringify(s)) { h ^= ch.charCodeAt(0); h = Math.imul(h, 16777619); }
+  return (h >>> 0).toString(36);
+}
+function buildICS(cal, fp) {
   const enc = new TextEncoder();
   const esc = t => String(t).replace(/\\/g, '\\\\').replace(/;/g, '\\;').replace(/,/g, '\\,').replace(/\r?\n/g, '\\n');
   /* RFC 5545: lines are at most 75 octets; continuation lines start with a space. */
@@ -1034,7 +1055,7 @@ function buildICS(cal) {
       if (!c.workout) continue;
       const date = cal.dateOf(wk.n, d);
       const desc = [c.det, c.pace, c.s, `Week ${wk.n} · ${phaseName(wk.phase, cal.G)}`].filter(Boolean).join('\n');
-      lines.push('BEGIN:VEVENT', `UID:ptp-${ymd(date)}-w${wk.n}@physical-training-planner`, `DTSTAMP:${stamp}`,
+      lines.push('BEGIN:VEVENT', `UID:ptp-${fp}-${ymd(date)}@physical-training-planner`, `DTSTAMP:${stamp}`,
         `DTSTART;VALUE=DATE:${ymd(date)}`, `DTEND;VALUE=DATE:${ymd(addDays(date, 1))}`,
         `SUMMARY:${esc(c.t)}`, `DESCRIPTION:${esc(desc)}`, 'TRANSP:TRANSPARENT', 'END:VEVENT');
     }
@@ -1059,6 +1080,8 @@ const FIELDS = {
 };
 const STORE_KEY = 'ptp.settings.v1', DONE_KEY = 'ptp.done.v1';
 let form, currentUnits = 'us', currentGoal = 'marathon', done = new Set();
+/* One-off adjustments (bad link values, an impossible taper) shown until the visitor next edits something. */
+const notices = [];
 
 function getField(name) {
   const f = FIELDS[name], el = form.elements[name];
@@ -1078,7 +1101,9 @@ function setField(name, value) {
   if (f.kind === 'num') {
     const n = Number(value);
     if (value === '' || !Number.isFinite(n)) { el.value = ''; return; }
-    el.value = String(clamp(n, Number(el.min) || -Infinity, Number(el.max) || Infinity)); /* keep links/storage within field limits */
+    const v = clamp(n, Number(el.min) || -Infinity, Number(el.max) || Infinity); /* keep links/storage within field limits */
+    el.value = String(v);
+    if (v !== n) notices.push(`${form.querySelector(`label[for="${name}"]`).textContent.trim()} was outside the allowed range, so it's set to ${v}.`);
     return;
   }
   if (f.kind === 'date') { el.value = parseISODate(String(value)) ? String(value) : ''; return; }
@@ -1125,7 +1150,15 @@ function onGoalChange(prev, next) {
     setField('peakLong', N.defaults[units][1]);
   }
   if (+getField('weeks') === P.defWeeks) setField('weeks', N.defWeeks);
-  if (N.race && (+getField('taper') === P.defTaper || !N.tapers.includes(+getField('taper')))) setField('taper', N.defTaper);
+  const taper = +getField('taper');
+  if (N.race && (taper === P.defTaper || !N.tapers.includes(taper))) {
+    setField('taper', N.defTaper);
+    if (taper !== P.defTaper) setStatus(`Taper set to ${N.defTaper} weeks: a ${N.name} uses ${N.tapers.join(' or ')}.`, 8000);
+  }
+  if (P.race !== N.race && getField('anchorDate')) {
+    setField('anchorDate', '');
+    setStatus(`Cleared the ${P.race ? 'race' : 'start'} date: ${N.race ? 'a race date' : 'a start date'} means something different.`, 8000);
+  }
 }
 
 function readCfg() {
@@ -1144,7 +1177,7 @@ function readCfg() {
     peakLong: toMi(num('peakLong', G.defaults[s.units][1])),
     weightKg: (() => { const v = Number(s.weight); if (!s.weight || !Number.isFinite(v) || v <= 0) return 0; const kg = metric ? v : v / LB_PER_KG; return kg >= 30 && kg <= 250 ? kg : 0; })(),
     goal: s.goal,
-    weeks: Math.round(clamp(Number(s.weeks) || G.defWeeks, 6, 30)),
+    weeks: Math.round(Number(s.weeks) || G.defWeeks),
     anchor: parseISODate(s.anchorDate),
     cutEvery: +s.cutEvery, taper: +s.taper, days: +s.days,
     longDay: +s.longDay, restDay: +s.restDay, strength: +s.strength,
@@ -1154,8 +1187,12 @@ function readCfg() {
   cfg.raceMins = parseClock(s.raceTime, cfg.raceDist);
   cfg.easyPace = parsePace(s.easyPace, metric);
   cfg.mpPace = parsePace(s.mpPace, metric);
-  if (G.race && !G.tapers.includes(cfg.taper)) { cfg.taper = G.defTaper; setField('taper', cfg.taper); }
+  if (G.race && !G.tapers.includes(cfg.taper)) {
+    cfg.taper = G.defTaper; setField('taper', cfg.taper);
+    notices.push(`A ${G.name} plan uses a ${G.tapers.join(' or ')}-week taper, so the taper is set to ${cfg.taper} weeks.`);
+  }
   if (cfg.weeks < G.minWeeks) { cfg.weeks = G.minWeeks; cfg.weeksForced = true; }
+  if (cfg.weeks > 30) { cfg.weeks = 30; cfg.weeksCapped = true; }
   if (cfg.restDay === cfg.longDay) { cfg.restDay = mod7(cfg.longDay + 1); setField('restDay', cfg.restDay); cfg.restMoved = true; }
   [...form.elements.restDay.options].forEach(o => { o.disabled = +o.value === cfg.longDay; });
   return cfg;
@@ -1194,17 +1231,17 @@ function render() {
     const kcal = cfg.weightKg && !wk.race ? `<span class="ph">≈${Math.round(cfg.weightKg * KM_PER_MI * totMi).toLocaleString()} kcal running</span>` : '';
     const dates = week1 ? `<div class="dates">${fmtDate(dateOf(wk.n, cols[0]))} – ${fmtDate(dateOf(wk.n, cols[6]))}</div>` : '';
     const workouts = cells.filter(c => c.workout).length;
-    const doneCount = cols.filter(d => cells[d].workout && done.has(`w${wk.n}d${d}`)).length;
+    const doneCount = cols.filter(d => cells[d].workout && done.has(doneKey(wk.n, d, dateOf(wk.n, d), cells[d].cls))).length;
     rows += `<tr class="week" data-week="${wk.n}"><th scope="row" class="wkcell"><div class="n">Week ${wk.n}</div>${dates}<div class="ph">${phaseName(wk.phase, G)}</div><div class="tot">${totTxt}</div>${tags.join('')}${kcal}<div class="prog" data-of="${workouts}">${doneCount ? `${doneCount}/${workouts} done` : ''}</div></th>` +
       cols.map(d => {
-        const c = cells[d], key = `w${wk.n}d${d}`, date = dateOf(wk.n, d), isDone = c.workout && done.has(key);
+        const c = cells[d], date = dateOf(wk.n, d), key = doneKey(wk.n, d, date, c.cls), isDone = c.workout && done.has(key);
         const det = wk.race && c.cls === 'race' && raceDay ? `${fmtDate(raceDay)} · ${c.det}` : c.det;
         const box = c.workout ? `<label class="done"><input type="checkbox" data-done="${key}"${isDone ? ' checked' : ''} aria-label="Done: Week ${wk.n}, ${DAY_NAMES[d]}${date ? ' ' + fmtDate(date) : ''}, ${c.t}"></label>` : '';
         return `<td class="day ${c.cls}${isDone ? ' is-done' : ''}"><span class="dlabel" aria-hidden="true">${DAY_SHORT[d]}${date ? ' ' + date.getDate() : ''}</span><div><div class="t">${c.t}</div><div class="d">${det}</div>${c.pace ? `<div class="p">${c.pace}</div>` : ''}${c.s ? `<div class="s">${c.s}</div>` : ''}</div>${box}</td>`;
       }).join('') + '</tr>';
   }
   $('calBody').innerHTML = rows;
-  $('clearDoneBtn').hidden = done.size === 0;
+  $('clearDoneBtn').hidden = !$('calBody').querySelector('input[data-done]:checked');
   $('calFoot').textContent =
     `Easy = full sentences, ~3–4/10 effort; follow effort over pace${paces.easy || paces.mp ? ' — paces are guides, not targets' : ''}. Don't make up missed runs. Hold or repeat a week if sleep, appetite, mood, or recovery slip. Stop and get assessed for bone pain, swelling, limping, or pain that worsens as you run.`;
 
@@ -1276,6 +1313,8 @@ function renderSummary(cal) {
   const warns = plan.warnings.slice();
   if (cal.anchorWarn) warns.push(cal.anchorWarn);
   if (cfg.weeksForced) warns.push(`A ${G.name} plan needs at least ${G.minWeeks} weeks, so this calendar uses ${G.minWeeks}. Increase the plan length${G.race ? ', or choose "Build durability"' : ''}.`);
+  if (cfg.weeksCapped) warns.push('Plans are at most 30 weeks, so this calendar uses 30. Repeat weeks if your race is further away.');
+  warns.push(...notices);
   if (cfg.restMoved) warns.push(`Your rest day can't be the long-run day, so it moved to ${DAY_NAMES[cfg.restDay]}.`);
   if (cfg.peakMiles < cfg.startMiles - 0.1) warns.push(`Peak weekly distance is lower than your usual week, so the plan holds you at about ${U.D(cfg.startMiles)}. Raise the peak if you want the plan to build.`);
   if (cfg.peakLong < cfg.startLong - 0.1) warns.push(`Peak long run (${U.D(cfg.peakLong)}) is shorter than your current long run (${U.D(cfg.startLong)}). The plan won't push it past your current distance; check that both numbers are right.`);
@@ -1327,7 +1366,7 @@ function setStatus(msg, ms = 5000) {
 function save() { try { localStorage.setItem(STORE_KEY, JSON.stringify(snapshot())); } catch (e) { /* storage unavailable */ } }
 function saveDone() { try { localStorage.setItem(DONE_KEY, JSON.stringify([...done])); } catch (e) { /* storage unavailable */ } }
 function loadDone() {
-  try { const a = JSON.parse(localStorage.getItem(DONE_KEY) || '[]'); if (Array.isArray(a)) done = new Set(a.filter(k => /^w\d{1,2}d[0-6]$/.test(k))); } catch (e) { /* ignore */ }
+  try { const a = JSON.parse(localStorage.getItem(DONE_KEY) || '[]'); if (Array.isArray(a)) done = new Set(a.filter(k => /^(w\d{1,2}d[0-6]|\d{8}):[a-z]+$/.test(k))); } catch (e) { /* ignore */ }
 }
 function applyObject(o) {
   if (o.units !== undefined) setField('units', o.units);
@@ -1371,7 +1410,7 @@ function downloadICS() {
     return;
   }
   const cal = computeCalendar(cfg);
-  const url = URL.createObjectURL(new Blob([buildICS(cal)], { type: 'text/calendar;charset=utf-8' }));
+  const url = URL.createObjectURL(new Blob([buildICS(cal, planFingerprint())], { type: 'text/calendar;charset=utf-8' }));
   const a = document.createElement('a');
   a.href = url; a.download = 'training-plan.ics';
   document.body.append(a); a.click(); a.remove();
@@ -1381,6 +1420,7 @@ function downloadICS() {
 }
 let undoSnapshot = null;
 function resetPlan() {
+  notices.length = 0;
   undoSnapshot = snapshot();
   applyObject(Object.fromEntries(Object.entries(FIELDS).map(([k, f]) => [k, f.def])));
   if (location.search) history.replaceState(null, '', location.pathname);
@@ -1408,7 +1448,7 @@ function onDoneChange(e) {
   const row = box.closest('tr'), prog = row.querySelector('.prog');
   const n = row.querySelectorAll('input[data-done]:checked').length;
   prog.textContent = n ? `${n}/${prog.dataset.of} done` : '';
-  $('clearDoneBtn').hidden = done.size === 0;
+  $('clearDoneBtn').hidden = !$('calBody').querySelector('input[data-done]:checked');
 }
 function clearDone() {
   if (!window.confirm('Clear all checkmarks? This can\'t be undone.')) return;
@@ -1475,8 +1515,9 @@ function init() {
   currentGoal = getField('goal');
   applyUnitLabels(currentUnits);
   form.addEventListener('submit', e => e.preventDefault());
-  form.addEventListener('input', queueRender);
+  form.addEventListener('input', () => { notices.length = 0; queueRender(); });
   form.addEventListener('change', e => {
+    notices.length = 0;
     if (e.target.name === 'units') {
       const next = getField('units');
       convertFields(currentUnits, next);

@@ -52,3 +52,5 @@ Run `pytest -q` (see README → Development for setup). CI runs the same suite o
 Tests can't judge visual polish. For layout changes, also look at the page at phone width, in dark mode, and in print preview. If the UI changed noticeably, run `python scripts/screenshots.py`.
 
 Add a test for any new behavior. The `make_page(now=...)` fixture freezes the browser clock for date logic.
+
+In tests, wait with Playwright's `expect(...)` assertions, not `page.wait_for_function("...")`: the page's CSP blocks the `eval` that string-based waits need. Popover `toggle` events are async, so assert popover state and `aria-expanded` with `expect`.
