@@ -78,6 +78,7 @@ def test_defaults_render_marathon_plan(page):
     ("?units=metric&miles=40&longrun=21&peakMiles=61&peakLong=29", "km"),
     ("?goal=half&days=4", "mi"),
     ("?units=metric&goal=half&days=6&miles=40&longrun=21&peakMiles=48&peakLong=21", "km"),
+    ("?days=6&miles=70&longrun=20&peakMiles=75&peakLong=20", "mi"),
 ])
 def test_week_totals_equal_sum_of_days(make_page, query, unit):
     page = make_page(query)
@@ -208,7 +209,7 @@ def test_durability_build(page):
 
 @pytest.mark.parametrize("query,expect", [
     ("?goal=half&taper=3", "uses a 1 or 2-week taper"),
-    ("?miles=100", "was outside the allowed range, so it's set to 45"),
+    ("?miles=150", "was outside the allowed range, so it's set to 99"),
     ("?weeks=99", "was outside the allowed range, so it's set to 30"),
 ])
 def test_link_adjustments_are_announced(make_page, query, expect):
@@ -262,9 +263,9 @@ def test_plan_invariants_across_settings(page):
     problems = page.evaluate("""() => {
       const bad = [];
       for (const goal of ['marathon', 'half', 'base']) for (const days of [4, 5, 6]) for (const cutEvery of [3, 4])
-      for (const longDay of [5, 6]) for (const weeks of [10, 16, 24]) for (const start of [[12, 4], [25, 13], [45, 20]]) {
+      for (const longDay of [5, 6]) for (const weeks of [10, 16, 24]) for (const start of [[12, 4], [25, 13], [45, 20], [70, 20, 85]]) {
         const G = GOALS[goal];
-        const cfg = { units: 'us', startMiles: start[0], startLong: start[1], peakMiles: G.defaults.us[0], peakLong: G.defaults.us[1],
+        const cfg = { units: 'us', startMiles: start[0], startLong: start[1], peakMiles: start[2] ?? G.defaults.us[0], peakLong: G.defaults.us[1],
           goal, weeks, cutEvery, taper: G.defTaper || 0, days, longDay, restDay: longDay === 6 ? 0 : 6, strength: 2,
           raceDist: 21097.5, weekStart: 'sun', anchor: null };
         const cal = computeCalendar(cfg), label = JSON.stringify({ goal, days, cutEvery, longDay, weeks, start });
@@ -280,6 +281,45 @@ def test_plan_invariants_across_settings(page):
       return bad.slice(0, 10);
     }""")
     assert problems == []
+
+
+@pytest.mark.parametrize("query,peak", [
+    ("?days=6&miles=70&longrun=20&peakMiles=70&peakLong=20", "70 mi/week"),
+    ("?units=metric&days=6&miles=110&longrun=32&peakMiles=115&peakLong=32", "115 km/week"),
+])
+def test_high_mileage_runners_are_supported(make_page, query, peak):
+    """Issue #13: "Strava says I'm running 50-70 miles a week." Up to 99 mi (160 km) is accepted as entered."""
+    page = make_page(query)
+    assert f"Peak ~{peak}" in page.inner_text("#summary")
+    assert page.inner_text("#warnings") == ""
+    assert page.get_attribute("#miles", "max") == page.get_attribute("#peakMiles", "max") == ("160" if "metric" in query else "99")
+
+
+@pytest.mark.parametrize("query,advice", [
+    ("?days=4&miles=70&longrun=20&peakMiles=70&peakLong=20", "Add a running day, or lower your usual or peak weekly distance."),
+    ("?days=6&miles=99&longrun=20&peakMiles=99&peakLong=20", "split long easy days into two runs"),
+    ("?units=metric&days=5&miles=130&longrun=32&peakMiles=130&peakLong=32", "Add a running day"),
+])
+def test_easy_runs_longer_than_long_run_warn(make_page, query, advice):
+    warnings = make_page(query).inner_text("#warnings")
+    assert "some easy runs come out longer than the long run" in warnings and advice in warnings
+
+
+def test_long_easy_run_warning_only_at_high_volume(page):
+    """Beginners and typical plans never see it: a minimum-length tempo beside a short long run is fine."""
+    hits = page.evaluate("""() => {
+      const hits = [];
+      for (const units of ['us', 'metric']) for (const goal of ['marathon', 'half', 'base']) for (const days of [4, 5, 6])
+      for (const weeks of [8, 10, 16, 22]) for (const [m, l] of [[12, 4], [15, 5], [25, 13], [35, 10], [45, 16]]) {
+        if (days === 4 && m > 25) continue;  // 35+ on 4 days really does spread too much into easy days
+        const G = GOALS[goal];
+        const cfg = { units, startMiles: m, startLong: l, peakMiles: G.defaults.us[0], peakLong: G.defaults.us[1], goal, weeks,
+          cutEvery: 4, taper: G.defTaper || 0, days, longDay: 5, restDay: 6, strength: 2, raceDist: 21097.5, weekStart: 'sun', anchor: null };
+        if (computeCalendar(cfg).longWeekday) hits.push(JSON.stringify({ units, goal, days, weeks, m, l }));
+      }
+      return hits;
+    }""")
+    assert hits == [], "\n".join(hits)
 
 
 def test_suggested_paces(page):
