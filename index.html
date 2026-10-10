@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="color-scheme" content="light dark">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-6ZInJsKvDQGXe8XTr/7q+k2RFAq2cLWezMtv0sWh0wc='; style-src 'unsafe-inline'; img-src 'self' data:; base-uri 'none'; form-action 'none'; object-src 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-jmIwCF+ca2KqpD6m2loXVeIe4mWzK5/szpaCnKUwBio='; style-src 'unsafe-inline'; img-src 'self' data:; base-uri 'none'; form-action 'none'; object-src 'none'">
 <meta name="description" content="Free printable training calendar for the marathon or half marathon. Enter your current mileage to get a week-by-week, readiness-based plan with optional pace guidance and calendar export.">
 <link rel="canonical" href="https://evansmith1377.github.io/physical-training-planner/">
 <meta name="theme-color" content="#f3f6f8" media="(prefers-color-scheme: light)">
@@ -63,8 +63,9 @@ a { color: var(--accent); }
 
 /* ---------- Form ---------- */
 .presets { margin: 1rem 0 0; }
-.preset-list { display: grid; gap: .5rem; grid-template-columns: repeat(auto-fit, minmax(min(100%, 22rem), 1fr)); margin-block-start: .5rem; }
-@media (width < 30rem) { .preset-list { grid-template-columns: 1fr 1fr; } } /* two short columns keep the form near the top on phones */
+.preset-list { display: grid; gap: .5rem; grid-template-columns: 1fr 1fr; margin-block-start: .5rem; } /* two columns keep the form near the top on phones */
+@media (width >= 60rem) { .preset-list { grid-template-columns: repeat(3, 1fr); } }
+@media (width < 22rem) { .preset-list { grid-template-columns: 1fr; } }
 .preset-list button { display: grid; align-content: start; gap: .15rem; padding: .55rem .75rem; text-align: start; font-weight: 400; border-color: var(--field-border); }
 .preset-list button span { font-size: .85rem; color: var(--muted); }
 .preset-list button[aria-current="true"] { border-color: var(--accent); background: color-mix(in oklab, var(--accent) 14%, var(--paper)); }
@@ -1124,15 +1125,17 @@ const PRESETS = {
   sofa:     { goal: 'half', miles: 12, longrun: 4, weeks: 24, peakMiles: 25, peakLong: 10, cutEvery: 3, days: 4, strength: 2 },
   comeback: { goal: 'base', miles: 15, longrun: 6, weeks: 12, peakMiles: 25, peakLong: 10, cutEvery: 3, days: 4, strength: 2 },
   weekend:  { goal: 'half', miles: 22, longrun: 9, weeks: 14, peakMiles: 28, peakLong: 12, cutEvery: 4, days: 4, strength: 1 },
-  emily:    { ...Object.fromEntries(['goal', 'miles', 'longrun', 'weeks', 'peakMiles', 'peakLong', 'cutEvery', 'days', 'strength'].map(k => [k, FIELDS[k].def])) },
+  /* The defaults' whole plan, including taper and schedule days. */
+  emily:    Object.fromEntries(['goal', 'miles', 'longrun', 'weeks', 'peakMiles', 'peakLong', 'cutEvery', 'taper', 'days', 'longDay', 'restDay', 'strength'].map(k => [k, FIELDS[k].def])),
   maven:    { goal: 'marathon', miles: 40, longrun: 16, weeks: 18, peakMiles: 50, peakLong: 20, cutEvery: 4, days: 6, strength: 2 },
   monster:  { goal: 'marathon', miles: 60, longrun: 18, weeks: 18, peakMiles: 70, peakLong: 20, cutEvery: 4, days: 6, strength: 1 }
 };
 const DIST_KEYS = ['miles', 'longrun', 'peakMiles', 'peakLong'];
+const miToKmField = mi => Math.round(mi * KM_PER_MI);  /* form distances in km are whole numbers */
 /* A preset's form values in the current units (metric distances round to whole km, as unit switching does). */
 function presetValues(id, units) {
   const v = { ...PRESETS[id] };
-  if (units === 'metric') for (const k of DIST_KEYS) v[k] = Math.round(v[k] * KM_PER_MI);
+  if (units === 'metric') for (const k of DIST_KEYS) v[k] = miToKmField(v[k]);
   return v;
 }
 const STORE_KEY = 'ptp.settings.v1', DONE_KEY = 'ptp.done.v1';
@@ -1196,7 +1199,7 @@ function convertFields(from, to) {
   const toMetric = to === 'metric';
   for (const k of DIST_KEYS) {
     const v = Number(form.elements[k].value);
-    if (form.elements[k].value !== '' && Number.isFinite(v)) form.elements[k].value = Math.round(toMetric ? v * KM_PER_MI : v / KM_PER_MI);
+    if (form.elements[k].value !== '' && Number.isFinite(v)) form.elements[k].value = toMetric ? miToKmField(v) : Math.round(v / KM_PER_MI);
   }
   const w = Number(form.elements.weight.value);
   if (form.elements.weight.value !== '' && Number.isFinite(w)) form.elements.weight.value = Math.round(toMetric ? w / LB_PER_KG : w * LB_PER_KG);
@@ -1213,6 +1216,10 @@ function onGoalChange(prev, next) {
     setField('peakLong', N.defaults[units][1]);
   }
   if (+getField('weeks') === P.defWeeks) setField('weeks', N.defWeeks);
+  goalTransition(P, N);
+}
+/* Taper and race/start date that no longer fit a new goal, with notices. Also used by presets. */
+function goalTransition(P, N) {
   const taper = +getField('taper');
   if (N.race && (taper === P.defTaper || !N.tapers.includes(taper))) {
     setField('taper', N.defTaper);
@@ -1277,7 +1284,7 @@ function render() {
   /* Mark the preset that matches the current settings, if any. */
   const now = snapshot();
   form.querySelectorAll('[data-preset]').forEach(b => b.setAttribute('aria-current', String(
-    Object.entries(presetValues(b.dataset.preset, cfg.units)).every(([k, v]) => String(now[k]) === String(v)))));
+    Object.entries(presetValues(b.dataset.preset, cfg.units)).every(([k, v]) => now[k] !== '' && (+now[k] === +v || String(now[k]) === String(v))))));
 
   $('calHead').innerHTML = `<tr><th scope="col">Week</th>${cols.map(d => `<th scope="col">${DAY_NAMES[d]}</th>`).join('')}</tr>`;
 
@@ -1509,23 +1516,26 @@ let undoSnapshot = null;
 /* Replace settings in one undoable step (reset and presets). */
 function replaceSettings(apply, msg) {
   notices.length = 0;
-  undoSnapshot = snapshot();
+  if ($('undoBtn').hidden) undoSnapshot = snapshot();  /* while Undo is offered, keep the visitor's own settings */
   apply();
   if (location.search) history.replaceState(null, '', location.pathname);
   userChange = true;
   render();
   $('undoBtn').hidden = false;
-  setStatus(msg, 12000);
+  setStatus(typeof msg === 'function' ? msg() : msg, 12000);
 }
 function resetPlan() {
   replaceSettings(() => applyObject(Object.fromEntries(Object.entries(FIELDS).map(([k, f]) => [k, f.def]))), 'Settings reset to defaults.');
 }
 function applyPreset(id, name) {
+  let kept = '';
   replaceSettings(() => {
     const v = presetValues(id, getField('units'));
-    onGoalChange(currentGoal, v.goal);  /* taper and race/start date follow the goal, with notices */
+    goalTransition(GOALS[currentGoal], GOALS[v.goal]);
+    /* A race date the visitor set still decides the plan length. */
+    if (GOALS[v.goal].race && getField('anchorDate')) { kept = ` Kept your ${getField('weeks')}-week plan to fit your race date.`; delete v.weeks; }
     applyObject(v);
-  }, `Applied "${name}". Fine-tune anything below.`);
+  }, () => `Applied "${name}".${kept} Fine-tune anything below.`);
 }
 function undoReset() {
   if (!undoSnapshot) return;
@@ -1613,7 +1623,7 @@ function init() {
   currentGoal = getField('goal');
   applyUnitLabels(currentUnits);
   form.addEventListener('submit', e => e.preventDefault());
-  form.addEventListener('input', () => { notices.length = 0; queueRender(); });
+  form.addEventListener('input', () => { notices.length = 0; $('undoBtn').hidden = true; queueRender(); });  /* an edit ends the Undo offer */
   form.addEventListener('change', e => {
     notices.length = 0;
     if (e.target.name === 'units') {

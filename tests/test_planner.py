@@ -194,6 +194,31 @@ def test_preset_that_changes_race_goal_clears_date_with_notice(make_page):
     assert "Cleared the race date" in page.inner_text("#warnings")
 
 
+def test_undo_after_several_presets_restores_own_settings(page):
+    fill(page, "#miles", "31")
+    page.click('[data-preset="sofa"]')
+    page.click('[data-preset="monster"]')
+    page.click("#undoBtn")
+    settle(page)
+    assert values(page, "miles") == ["31"]
+
+
+def test_preset_keeps_plan_length_that_fits_race_date(make_page):
+    page = make_page("?anchorDate=2027-01-02&weeks=13", now=NOW)
+    page.click('[data-preset="sofa"]')
+    assert values(page, "weeks", "miles") == ["13", "12"]
+    expect(page.locator("#actionStatus")).to_contain_text("Kept your 13-week plan to fit your race date.")
+
+
+def test_emily_restores_her_whole_plan(make_page):
+    assert current_preset(make_page("?miles=25.0")) == ["emily"]  # 25.0 is the same as 25
+    page = make_page("?taper=2&longDay=6&restDay=0")
+    assert current_preset(page) == []
+    page.click('[data-preset="emily"]')
+    assert page.is_checked('input[name="taper"][value="3"]') and page.is_checked('input[name="longDay"][value="5"]')
+    assert current_preset(page) == ["emily"]
+
+
 @pytest.mark.parametrize("units", ["us", "metric"])
 def test_every_preset_builds_a_clean_plan(page, units):
     pick(page, "units", units)
