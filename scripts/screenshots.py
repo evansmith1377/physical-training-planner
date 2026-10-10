@@ -12,7 +12,7 @@ from pathlib import Path
 from playwright.sync_api import sync_playwright
 
 ROOT = Path(__file__).resolve().parent.parent
-DEMO = "?raceTime=1%3A50%3A00&anchorDate=2027-03-14"  # sample settings shown in the screenshots
+DEMO = "?raceTime=1%3A50%3A00&anchorDate=2027-03-13"  # sample settings: Saturday race, default Sunday-first weeks
 NOW = datetime(2026, 10, 10, 12, 0)
 
 OG_CARD = """<!doctype html><meta charset="utf-8"><style>
@@ -34,13 +34,18 @@ OG_CARD = """<!doctype html><meta charset="utf-8"><style>
 ) + "</div>"
 
 
+class _QuietHandler(http.server.SimpleHTTPRequestHandler):
+    def log_message(self, *args):
+        pass
+
+
 def main():
-    handler = functools.partial(http.server.SimpleHTTPRequestHandler, directory=str(ROOT))
-    handler.log_message = lambda *a: None
+    handler = functools.partial(_QuietHandler, directory=str(ROOT))
     server = http.server.ThreadingHTTPServer(("127.0.0.1", 0), handler)
     threading.Thread(target=server.serve_forever, daemon=True).start()
     url = f"http://127.0.0.1:{server.server_port}/{DEMO}"
-    (ROOT / "docs").mkdir(exist_ok=True)
+    for folder in ("assets", "docs"):
+        (ROOT / folder).mkdir(exist_ok=True)
     with sync_playwright() as p:
         browser = p.chromium.launch()
 

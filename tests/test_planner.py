@@ -91,6 +91,20 @@ def test_week_header_sticks_on_mobile(make_page):
     assert page.evaluate("Math.round(document.querySelector('tr.week th.wkcell').getBoundingClientRect().top)") == 0
 
 
+@pytest.mark.parametrize("width", [320, 375, 1280])
+def test_checkbox_never_overlaps_text(make_page, width):
+    page = make_page("?raceTime=1%3A50%3A00", width=width, mobile=width < 800)
+    overlaps = page.evaluate("""() => [...document.querySelectorAll('td.day')].filter(td => {
+        const box = td.querySelector('.done'); if (!box) return false;
+        const b = box.getBoundingClientRect();
+        return [...td.querySelectorAll(':scope > div > div')].some(el => {
+            const r = el.getBoundingClientRect();
+            return r.right > b.left + 1 && r.left < b.right && r.bottom > b.top && r.top < b.bottom;
+        });
+    }).length""")
+    assert overlaps == 0
+
+
 def test_dark_mode_changes_colors(make_page):
     light = make_page().evaluate("getComputedStyle(document.body).backgroundColor")
     dark = make_page(dark=True).evaluate("getComputedStyle(document.body).backgroundColor")

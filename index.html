@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="color-scheme" content="light dark">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-d+NFaAdPlD5xIo0YKx2u5LsXmYRNPIJlCmCYbUCBR/o='; style-src 'unsafe-inline'; img-src 'self' data:; base-uri 'none'; form-action 'none'; object-src 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-P1qQv+iMXuOyRdfacBiOcOIUZdeKdXvcTfUVe9mSc08='; style-src 'unsafe-inline'; img-src 'self' data:; base-uri 'none'; form-action 'none'; object-src 'none'">
 <meta name="description" content="Free printable training calendar for the marathon or half marathon. Enter your current mileage to get a week-by-week, readiness-based plan with optional pace guidance and calendar export.">
 <link rel="canonical" href="https://evansmith1377.github.io/physical-training-planner/">
 <meta name="theme-color" content="#f3f6f8" media="(prefers-color-scheme: light)">
@@ -28,7 +28,7 @@
   color-scheme: light dark;
   --bg:#e9eef2; --paper:#ffffff; --ink:#1d2733; --muted:#4f5d6d; --line:#c3ccd6; --soft:#f3f6f8; --field-border:#7d8a99;
   --accent:#2f6db5; --accent-ink:#ffffff; --focus:#0b57d0;
-  --long:#2f6db5; --quality:#c46a12; --easy:#2f8a52; --rest:#8a96a3; --race:#c0392b; --off:#b9c2cc;
+  --long:#2f6db5; --quality:#c46a12; --easy:#2f8a52; --easy-ink:#1f6e3f; --rest:#8a96a3; --race:#c0392b; --off:#b9c2cc;
   --rest-bg:#f7f9fa; --race-bg:#fdf1ef; --warn-bg:#fdf1ef; --phase-bg:#1d2733; --phase-ink:#ffffff;
   accent-color: var(--accent);
 }
@@ -36,7 +36,7 @@
   :root {
     --bg:#0e1318; --paper:#141a21; --ink:#e4e9ee; --muted:#a3afbc; --line:#334050; --soft:#1c242d; --field-border:#6c7a8a;
     --accent:#7fb0ec; --accent-ink:#0e1318; --focus:#9cc3ff;
-    --long:#6fa3e6; --quality:#e89a4f; --easy:#5fbf84; --rest:#7f8b98; --race:#ee7466; --off:#4a5664;
+    --long:#6fa3e6; --quality:#e89a4f; --easy:#5fbf84; --easy-ink:#5fbf84; --rest:#7f8b98; --race:#ee7466; --off:#4a5664;
     --rest-bg:#171e26; --race-bg:#2a1a19; --warn-bg:#2a1a19; --phase-bg:#2a3542; --phase-ink:#ffffff;
   }
 }
@@ -107,7 +107,7 @@ button.primary { background: var(--accent); border-color: var(--accent); color: 
 .term .tip { inline-size: 1.35rem; block-size: 1.35rem; font-size: .75rem; }
 .action-status { font-size: .9rem; color: var(--muted); display: inline-flex; align-items: center; gap: .3rem; }
 button.linklike { min-block-size: 44px; padding: 0 .4rem; border: none; background: none; color: var(--accent); text-decoration: underline; font-weight: 650; }
-.update-note { min-block-size: 1.5em; font-size: .92rem; color: var(--easy); margin: .2rem 0 0; }
+.update-note { min-block-size: 1.5em; font-size: .92rem; color: var(--easy-ink); margin: .2rem 0 0; }
 .update-note a { margin-inline-start: .4rem; }
 .skip { position: absolute; inset-inline-start: 1rem; inset-block-start: -10rem; z-index: 10; background: var(--accent); color: var(--accent-ink); padding: .6rem 1rem; border-radius: 6px; font-weight: 700; }
 .skip:focus { inset-block-start: 1rem; }
@@ -135,7 +135,7 @@ button.linklike { min-block-size: 44px; padding: 0 .4rem; border: none; backgrou
 .wkcell .ph { color: var(--muted); font-size: .75rem; }
 .wkcell .tot { font-weight: 700; }
 .tag { display: inline-block; font-size: .66rem; font-weight: 700; border: 1px solid var(--muted); border-radius: 3px; padding: 0 .3rem; margin: .15rem .15rem 0 0; text-transform: uppercase; letter-spacing: .03em; }
-.tag.cut { border-color: var(--easy); color: var(--easy); }
+.tag.cut { border-color: var(--easy-ink); color: var(--easy-ink); }
 .tag.peak { border-color: var(--long); color: var(--long); }
 .tag.race { border-color: var(--race); color: var(--race); }
 .day { border-inline-start: 5px solid var(--off) !important; position: relative; overflow-wrap: anywhere; }
@@ -152,11 +152,11 @@ button.linklike { min-block-size: 44px; padding: 0 .4rem; border: none; backgrou
 .day .dlabel { display: none; }
 .day .done { position: absolute; inset-block-start: .2rem; inset-inline-end: .2rem; display: grid; place-items: center; inline-size: 2rem; block-size: 2rem; cursor: pointer; }
 .day .done input { inline-size: 1.05rem; block-size: 1.05rem; margin: 0; cursor: pointer; }
-.day:has(.done) .t { padding-inline-end: 1.6rem; }
-.day.is-done > div { opacity: .55; }
+.day:has(.done) > div { padding-inline-end: 1.8rem; } /* keep text clear of the checkbox */
+.day.is-done > div, .day.is-done .d { color: var(--muted); } /* de-emphasize without failing contrast */
 .day.is-done .t { text-decoration: line-through; text-decoration-thickness: 1px; }
 .wkcell .dates { font-size: .75rem; font-weight: 650; }
-.wkcell .prog { font-size: .72rem; color: var(--easy); font-weight: 650; }
+.wkcell .prog { font-size: .72rem; color: var(--easy-ink); font-weight: 650; }
 .phase-row td { background: var(--phase-bg); color: var(--phase-ink); font-size: .8rem; padding: .35rem .6rem; }
 .phase-row strong { margin-inline-end: .4rem; }
 .calendar tfoot td { font-size: .75rem; color: var(--muted); border: none; padding-block-start: .5rem; }
@@ -169,7 +169,7 @@ button.linklike { min-block-size: 44px; padding: 0 .4rem; border: none; backgrou
     .calendar tr.week { border: 1px solid var(--line); border-radius: 8px; margin-block-end: .9rem; }
     .calendar tr.phase-row td { border-radius: 8px; margin-block: 1.2rem .6rem; border: none; font-size: .88rem; }
     .calendar th.wkcell { position: sticky; inset-block-start: 0; z-index: 1; border: none; border-block-end: 1px solid var(--line); border-radius: 8px 8px 0 0; display: flex; flex-wrap: wrap; align-items: baseline; gap: .1rem .6rem; padding: .55rem .75rem; }
-    .calendar td.day { border: none !important; border-block-start: 1px solid var(--line) !important; border-inline-start: 6px solid var(--off) !important; display: grid; grid-template-columns: 3rem 1fr; gap: .6rem; padding: .55rem .75rem; font-size: .92rem; }
+    .calendar td.day { border: none !important; border-block-start: 1px solid var(--line) !important; border-inline-start: 6px solid var(--off) !important; display: grid; grid-template-columns: 3.8rem 1fr; gap: .6rem; padding: .55rem .75rem; font-size: .92rem; }
     .calendar td.day.long { border-inline-start-color: var(--long) !important; }
     .calendar td.day.quality { border-inline-start-color: var(--quality) !important; }
     .calendar td.day.easy { border-inline-start-color: var(--easy) !important; }
@@ -178,7 +178,7 @@ button.linklike { min-block-size: 44px; padding: 0 .4rem; border: none; backgrou
     .calendar tr.week td.day:last-child { border-radius: 0 0 0 8px; }
     .day .dlabel { display: block; font-weight: 750; color: var(--muted); }
     .day .done { inline-size: 2.75rem; block-size: 2.75rem; inset-block-start: .15rem; inset-inline-end: .15rem; }
-    .day:has(.done) .t { padding-inline-end: 2.4rem; }
+    .day:has(.done) > div { padding-inline-end: 2.6rem; }
     .day .d, .day .p, .day .s { font-size: .85rem; }
     .calendar tfoot td { padding: 0; }
   }
@@ -221,8 +221,9 @@ footer.site { margin-block-start: 1.5rem; font-size: .85rem; color: var(--muted)
   .tag { font-size: 5.8pt; }
   .day .done { inline-size: auto; block-size: auto; inset-block-start: 2pt; inset-inline-end: 2pt; }
   .day .done input { inline-size: 8pt; block-size: 8pt; }
+  .day:has(.done) > div { padding-inline-end: 0; }
   .day:has(.done) .t { padding-inline-end: 10pt; }
-  .day.is-done > div { opacity: 1; }
+  .day.is-done > div { color: inherit; }
   .day.is-done .t { text-decoration: none; }
   .wkcell .prog { display: none; }
   .wkcell .dates { font-size: 6.6pt; }
@@ -759,7 +760,7 @@ function computePaces(cfg, G) {
   }
   if (cfg.mpPace) out.mp = [cfg.mpPace, cfg.mpPace];
   if (cfg.easyPace) { out.easy = [cfg.easyPace, cfg.easyPace + 0.5]; out.source = out.source || 'easy'; }
-  if (out.mp && out.tempo) out.steady = [out.tempo + (Math.max(out.mp[0], out.tempo) - out.tempo) * 0.5, Math.max(out.mp[0], out.tempo)];
+  if (out.mp && out.tempo) { const top = Math.max(out.mp[0], out.tempo); out.steady = [(out.tempo + top) / 2, top]; } /* halfway between tempo and race pace */
   return out;
 }
 
@@ -1004,7 +1005,11 @@ function computeCalendar(cfg) {
   const dateOf = (n, d) => week1 ? addDays(week1, 7 * (n - 1) + mod7(d - ws)) : null;
   const weeks = plan.weeks.map(wk => ({ wk, ...buildWeekDays(wk, wk.race ? raceLayout : layout, cfg, U, paces, G) }));
   const cols = Array.from({ length: 7 }, (_, i) => mod7(ws + i));
-  return { cfg, U, G, plan, paces, ws, cols, week1, raceDay, dateOf, weeks };
+  const weeksAway = raceDay ? weeksBetween(weekStartOf(new Date(), ws), weekStartOf(raceDay, ws)) + 1 : null;
+  let anchorWarn = '';
+  if (weeksAway !== null && weeksAway < 1) anchorWarn = 'That race date has already passed. Pick a future date, or clear it to use week numbers only.';
+  else if (weeksAway !== null && weeksAway < G.minWeeks) anchorWarn = `Your race is only ${weeksAway} week${weeksAway > 1 ? 's' : ''} away, shorter than the ${G.minWeeks}-week minimum for a ${G.name} plan. Consider a later race.`;
+  return { cfg, U, G, plan, paces, ws, cols, week1, raceDay, dateOf, weeks, weeksAway, anchorWarn };
 }
 const phaseName = (phase, G) => phase === 3 && G.phase3 ? G.phase3 : PHASE_NAMES[phase];
 
@@ -1209,7 +1214,7 @@ function render() {
 }
 
 function renderHints(cal) {
-  const { cfg, U, G, raceDay, week1, ws } = cal;
+  const { cfg, U, G, raceDay, week1, ws, weeksAway: n } = cal;
   const r = RANGES[cfg.units];
   $('taperField').hidden = !G.race;
   form.querySelectorAll('input[name=taper]').forEach(i => { i.closest('label').hidden = !G.race || !G.tapers.includes(+i.value); });
@@ -1232,14 +1237,11 @@ function renderHints(cal) {
   let anchorHint = G.race
     ? 'Adds dates to each week and lets you export the plan to your calendar. Weeks will end on race day.'
     : 'Adds dates to each week and lets you export the plan to your calendar. Week 1 is the week containing this date.';
-  cal.anchorWarn = '';
   if (raceDay) {
-    const n = weeksBetween(weekStartOf(new Date(), ws), weekStartOf(raceDay, ws)) + 1;
     anchorHint = `Race day: ${DAY_NAMES[dayIdx(raceDay)]}, ${fmtDate(raceDay)}. Week 1 starts ${fmtDate(week1)}.`;
-    if (n < 1) cal.anchorWarn = 'That race date has already passed. Pick a future date, or clear it to use week numbers only.';
-    else if (n < G.minWeeks) cal.anchorWarn = `Your race is only ${n} week${n > 1 ? 's' : ''} away, shorter than the ${G.minWeeks}-week minimum for a ${G.name} plan. Consider a later race.`;
-    else if (n > 30) anchorHint += ` It's ${n} weeks away; the plan is at most 30 weeks, so start Week 1 on ${fmtDate(week1)}.`;
-    else if (n !== cfg.weeks) { match.hidden = false; match.dataset.weeks = n; match.textContent = `Use ${n} weeks (starts this week)`; }
+    /* Too-soon or past dates get a warning in the summary instead of a hint. */
+    if (!cal.anchorWarn && n > 30) anchorHint += ` It's ${n} weeks away; the plan is at most 30 weeks, so start Week 1 on ${fmtDate(week1)}.`;
+    else if (!cal.anchorWarn && n !== cfg.weeks) { match.hidden = false; match.dataset.weeks = n; match.textContent = `Use ${n} weeks (starts this week)`; }
   } else if (cfg.anchor) {
     anchorHint = `Week 1 starts ${fmtDate(week1)}.`;
   }
