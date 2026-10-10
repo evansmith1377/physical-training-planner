@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="color-scheme" content="light dark">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-jmIwCF+ca2KqpD6m2loXVeIe4mWzK5/szpaCnKUwBio='; style-src 'unsafe-inline'; img-src 'self' data:; base-uri 'none'; form-action 'none'; object-src 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-dC1jTCysL0twpVn8ovrHJnrXQLv3c3Ob3oP/AJWAdXo='; style-src 'unsafe-inline'; img-src 'self' data:; base-uri 'none'; form-action 'none'; object-src 'none'">
 <meta name="description" content="Free printable training calendar for the marathon or half marathon. Enter your current mileage to get a week-by-week, readiness-based plan with optional pace guidance and calendar export.">
 <link rel="canonical" href="https://evansmith1377.github.io/physical-training-planner/">
 <meta name="theme-color" content="#f3f6f8" media="(prefers-color-scheme: light)">
@@ -499,7 +499,7 @@ footer.site { margin-block-start: 1.5rem; font-size: .85rem; color: var(--muted)
     <button type="button" id="resetBtn">Reset to defaults</button>
     <span class="action-status" role="status"><span id="actionStatus"></span> <button type="button" id="undoBtn" class="linklike" hidden>Undo</button></span>
   </div>
-  <p class="hint" id="copyHint">The link saves all your settings, so you can bookmark it or send it to someone.</p>
+  <p class="hint" id="copyHint">The link saves your plan settings (not your body weight), so you can bookmark it or send it to someone.</p>
   <p class="hint" id="icsHint">Downloads every workout as an all-day event for Google Calendar, Apple Calendar or Outlook. Needs a race or start date. If you change your plan later, delete the old events before importing the new file.</p>
   <p class="hint">Printing tip: if your browser doesn't pick up the orientation automatically, choose it in the print dialog, and turn off headers and footers. On a phone, use your browser's Share → Print to save a PDF.</p>
   <p class="update-note" id="liveStatus" role="status"></p>
@@ -1072,7 +1072,7 @@ const phaseName = (phase, G) => phase === 3 && G.phase3 ? G.phase3 : PHASE_NAMES
    while a different plan never collides with an earlier import. */
 function planFingerprint() {
   const s = snapshot();
-  for (const k of ['weekStart', 'paper', 'orientation', 'includeGuide', 'weight']) delete s[k];
+  for (const k in FIELDS) if (FIELDS[k].private || ['weekStart', 'paper', 'orientation', 'includeGuide'].includes(k)) delete s[k];
   let h = 2166136261;
   for (const ch of JSON.stringify(s)) { h ^= ch.charCodeAt(0); h = Math.imul(h, 16777619); }
   return (h >>> 0).toString(36);
@@ -1109,7 +1109,7 @@ function buildICS(cal, fp) {
 /* =============================== form state =============================== */
 const FIELDS = {
   units: { kind: 'radio', def: 'us' },
-  miles: { kind: 'num', def: '25' }, longrun: { kind: 'num', def: '13' }, weight: { kind: 'num', def: '' },
+  miles: { kind: 'num', def: '25' }, longrun: { kind: 'num', def: '13' }, weight: { kind: 'num', def: '', private: true },
   goal: { kind: 'radio', def: 'marathon' }, weeks: { kind: 'num', def: '22' }, anchorDate: { kind: 'date', def: '' },
   peakMiles: { kind: 'num', def: '38' }, peakLong: { kind: 'num', def: '18' },
   cutEvery: { kind: 'radio', def: '4' }, taper: { kind: 'radio', def: '3' },
@@ -1194,6 +1194,10 @@ function applyUnitLabels(units) {
     e.textContent = `Enter a number from ${r[k][0]} to ${r[k][1]} ${unitOf(k)}.`;
   });
 }
+function convertWeight(from, to) {
+  const w = Number(form.elements.weight.value);
+  if (from !== to && form.elements.weight.value !== '' && Number.isFinite(w)) form.elements.weight.value = Math.round(to === 'metric' ? w / LB_PER_KG : w * LB_PER_KG);
+}
 function convertFields(from, to) {
   if (from === to) return;
   const toMetric = to === 'metric';
@@ -1201,8 +1205,7 @@ function convertFields(from, to) {
     const v = Number(form.elements[k].value);
     if (form.elements[k].value !== '' && Number.isFinite(v)) form.elements[k].value = toMetric ? miToKmField(v) : Math.round(v / KM_PER_MI);
   }
-  const w = Number(form.elements.weight.value);
-  if (form.elements.weight.value !== '' && Number.isFinite(w)) form.elements.weight.value = Math.round(toMetric ? w / LB_PER_KG : w * LB_PER_KG);
+  convertWeight(from, to);
   for (const k of ['easyPace', 'mpPace']) {
     const p = parsePace(form.elements[k].value, from === 'metric');
     if (p) form.elements[k].value = fmtPace(toMetric ? p / KM_PER_MI : p);
@@ -1470,15 +1473,27 @@ function applyObject(o) {
   currentGoal = getField('goal');
 }
 function loadInitial() {
+  let stored = null;
+  try { const o = JSON.parse(localStorage.getItem(STORE_KEY) || 'null'); if (o && typeof o === 'object') stored = o; } catch (e) { /* ignore */ }
   const params = new URLSearchParams(location.search);
   const fromUrl = {};
-  for (const k in FIELDS) if (params.has(k)) fromUrl[k] = params.get(k);
-  if (Object.keys(fromUrl).length) { applyObject(fromUrl); return; }
-  try { const o = JSON.parse(localStorage.getItem(STORE_KEY) || 'null'); if (o && typeof o === 'object') applyObject(o); } catch (e) { /* ignore */ }
+  for (const k in FIELDS) if (params.has(k) && !FIELDS[k].private) fromUrl[k] = params.get(k);
+  if (!Object.keys(fromUrl).length) { if (stored) applyObject(stored); return; }
+  /* Private fields never come from a link: keep this browser's own values, converted if the link uses other units. */
+  if (stored) applyObject(Object.fromEntries(Object.keys(FIELDS).filter(k => k === 'units' || FIELDS[k].private).map(k => [k, stored[k]])));
+  const ownUnits = getField('units');
+  applyObject({ units: FIELDS.units.def, ...fromUrl });  /* a link without units means the default, as on a fresh visit */
+  convertWeight(ownUnits, getField('units'));
+  /* Older links may still carry private values; take them out of the address bar so they aren't passed on. */
+  if (Object.keys(FIELDS).some(k => FIELDS[k].private && params.has(k))) {
+    for (const k in FIELDS) if (FIELDS[k].private) params.delete(k);
+    history.replaceState(null, '', `${location.pathname}?${params}`);
+  }
 }
 function shareUrl() {
   const s = snapshot(), p = new URLSearchParams();
   for (const k in FIELDS) {
+    if (FIELDS[k].private) continue;  /* personal data stays out of links that get bookmarked, sent and logged */
     const def = FIELDS[k].def, v = s[k];
     if (String(v) !== String(def) || k === 'units') p.set(k, String(v));
   }
