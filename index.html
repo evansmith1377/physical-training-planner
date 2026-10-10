@@ -204,9 +204,9 @@ footer.site { margin-block-start: 1.5rem; font-size: .85rem; color: var(--muted)
   h1 { font-size: 15pt; margin-block-end: 2pt; }
   h2 { font-size: 12pt; margin-block-start: 10pt; }
   .eyebrow, .intro { display: none; }
-  .summary { padding: 4pt 8pt; margin: 3pt 0; font-size: 8pt; background: #fff; }
+  .summary { padding: 4pt 8pt; margin: 3pt 0; font-size: 8pt; background: #fff; break-inside: avoid; }
   .summary ul { margin-block-start: 2pt; }
-  .warn { font-size: 8pt; padding: 3pt 6pt; }
+  .warn { font-size: 8pt; padding: 3pt 6pt; break-inside: avoid; }
   .legend { font-size: 7.5pt; margin: 3pt 0; }
   .calendar { font-size: 7.2pt; }
   .calendar th, .calendar td { padding: 2.5pt 3.5pt; border-color: #999; }
@@ -214,7 +214,6 @@ footer.site { margin-block-start: 1.5rem; font-size: .85rem; color: var(--muted)
   .calendar tfoot { display: table-footer-group; }
   .calendar tr { break-inside: avoid; }
   .calendar tr.phase-row { break-after: avoid; } /* a phase's readiness gate stays with its first week */
-  .summary, .warn { break-inside: avoid; }
   .wkcell .n { font-size: 9pt; }
   .wkcell .ph { font-size: 6.6pt; }
   .calendar tfoot td { font-size: 6.8pt; }
@@ -232,8 +231,8 @@ footer.site { margin-block-start: 1.5rem; font-size: .85rem; color: var(--muted)
   .guide { break-before: page; font-size: 8.5pt; }
   .guide th, .guide td { font-size: 8pt; padding: 3pt 5pt; }
   .guide h2, .guide h3 { break-after: avoid; }
-  /* Keep each topic (heading, table, list, note) on one page. A topic taller than a page still splits, so keep its parts whole too. */
-  .guide .topic, .guide table, .guide .note, .checklist { break-inside: avoid; }
+  /* Each topic stays on one page; if one ever outgrows a page, its tables and notes still stay whole. */
+  .guide .topic, .guide table, .guide .note { break-inside: avoid; }
   body.no-guide .guide { display: none; }
   /* Portrait: narrower page, so tighten the 7-day grid */
   body.print-portrait .calendar { font-size: 6.4pt; }
