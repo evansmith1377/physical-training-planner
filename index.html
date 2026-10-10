@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="color-scheme" content="light dark">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-StqfzsstKF7TpePvq7eV/dkxT3pXB82c4e6MnbEIKDc='; style-src 'unsafe-inline'; img-src 'self' data:; base-uri 'none'; form-action 'none'; object-src 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-42SY8xz2uSwPytSTNMPt2wCaJt2EMTbfXb/xQnCxKVg='; style-src 'unsafe-inline'; img-src 'self' data:; base-uri 'none'; form-action 'none'; object-src 'none'">
 <meta name="description" content="Free printable training calendar for the marathon or half marathon. Enter your current mileage to get a week-by-week, readiness-based plan with optional pace guidance and calendar export.">
 <link rel="canonical" href="https://evansmith1377.github.io/physical-training-planner/">
 <meta name="theme-color" content="#f3f6f8" media="(prefers-color-scheme: light)">
@@ -62,6 +62,12 @@ a { color: var(--accent); }
 :focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
 
 /* ---------- Form ---------- */
+.presets { margin: 1rem 0 0; }
+.preset-list { display: grid; gap: .5rem; grid-template-columns: repeat(auto-fit, minmax(min(100%, 22rem), 1fr)); margin-block-start: .5rem; }
+@media (width < 30rem) { .preset-list { grid-template-columns: 1fr 1fr; } } /* two short columns keep the form near the top on phones */
+.preset-list button { display: grid; align-content: start; gap: .15rem; padding: .55rem .75rem; text-align: start; font-weight: 400; border-color: var(--field-border); }
+.preset-list button span { font-size: .85rem; color: var(--muted); }
+.preset-list button[aria-current="true"] { border-color: var(--accent); background: color-mix(in oklab, var(--accent) 14%, var(--paper)); }
 .planner { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit, minmax(min(100%, 19rem), 1fr)); margin: 1rem 0; }
 .planner fieldset, .planner details { border: 1px solid var(--line); border-radius: 8px; padding: .9rem 1rem 1rem; margin: 0; min-inline-size: 0; background: var(--paper); }
 .planner legend, .planner summary { font-weight: 750; font-size: .95rem; padding-inline: .3rem; }
@@ -262,6 +268,18 @@ footer.site { margin-block-start: 1.5rem; font-size: .85rem; color: var(--muted)
 <noscript><p class="warn">This planner needs JavaScript to build your calendar. The reference guide below still works without it.</p></noscript>
 
 <form id="planForm" class="no-print" novalidate>
+  <div class="presets" role="group" aria-labelledby="presetsLabel" aria-describedby="presetsHint">
+    <span class="group-label" id="presetsLabel">Quick start</span>
+    <span class="hint" id="presetsHint">Pick the closest starting point, then fine-tune anything below. Your units, dates and paces stay as they are.</span>
+    <div class="preset-list">
+      <button type="button" data-preset="sofa"><strong>Sofa Starter</strong><span>New to running: a gentle first half marathon</span></button>
+      <button type="button" data-preset="comeback"><strong>Comeback Kid</strong><span>Back after a break: rebuild with no race</span></button>
+      <button type="button" data-preset="weekend"><strong>Weekend Warrior</strong><span>Busy weeks: a half marathon on 4 runs a week</span></button>
+      <button type="button" data-preset="emily"><strong>Emily's Starting Point</strong><span>The default: from a half-marathon base to a first marathon</span></button>
+      <button type="button" data-preset="maven"><strong>Marathon Maven</strong><span>Marathon regular: more volume over 6 run days</span></button>
+      <button type="button" data-preset="monster"><strong>Mileage Monster</strong><span>Already running big weeks: high volume, 6 run days</span></button>
+    </div>
+  </div>
   <div class="planner">
 
     <fieldset>
@@ -1101,6 +1119,22 @@ const FIELDS = {
   weekStart: { kind: 'radio', def: 'sun' }, paper: { kind: 'radio', def: 'letter' }, orientation: { kind: 'radio', def: 'landscape' },
   includeGuide: { kind: 'check', def: true }
 };
+/* Quick-start presets: training settings only, distances in miles. Units, dates, paces, days of the week and print options are left alone. */
+const PRESETS = {
+  sofa:     { name: 'Sofa Starter', goal: 'half', miles: 12, longrun: 4, weeks: 24, peakMiles: 25, peakLong: 10, cutEvery: 3, days: 4, strength: 2 },
+  comeback: { name: 'Comeback Kid', goal: 'base', miles: 15, longrun: 6, weeks: 12, peakMiles: 25, peakLong: 10, cutEvery: 3, days: 4, strength: 2 },
+  weekend:  { name: 'Weekend Warrior', goal: 'half', miles: 22, longrun: 9, weeks: 14, peakMiles: 28, peakLong: 12, cutEvery: 4, days: 4, strength: 1 },
+  emily:    { name: "Emily's Starting Point", ...Object.fromEntries(['goal', 'miles', 'longrun', 'weeks', 'peakMiles', 'peakLong', 'cutEvery', 'days', 'strength'].map(k => [k, FIELDS[k].def])) },
+  maven:    { name: 'Marathon Maven', goal: 'marathon', miles: 40, longrun: 16, weeks: 18, peakMiles: 50, peakLong: 20, cutEvery: 4, days: 6, strength: 2 },
+  monster:  { name: 'Mileage Monster', goal: 'marathon', miles: 60, longrun: 18, weeks: 18, peakMiles: 70, peakLong: 20, cutEvery: 4, days: 6, strength: 1 }
+};
+const DIST_KEYS = ['miles', 'longrun', 'peakMiles', 'peakLong'];
+/* A preset's form values in the current units (metric distances round to whole km, as unit switching does). */
+function presetValues(id, units) {
+  const { name, ...v } = PRESETS[id];
+  if (units === 'metric') for (const k of DIST_KEYS) v[k] = Math.round(v[k] * KM_PER_MI);
+  return v;
+}
 const STORE_KEY = 'ptp.settings.v1', DONE_KEY = 'ptp.done.v1';
 let form, currentUnits = 'us', currentGoal = 'marathon', done = new Set();
 /* One-off adjustments (bad link values, an impossible taper) shown until the visitor next edits something. */
@@ -1240,6 +1274,9 @@ function render() {
   document.body.classList.toggle('no-guide', !cfg.includeGuide);
   document.body.classList.toggle('print-portrait', cfg.orientation === 'portrait');
   renderHints(cal);
+  /* Mark the preset that matches the current settings, if any. */
+  form.querySelectorAll('[data-preset]').forEach(b => b.setAttribute('aria-current', String(
+    Object.entries(presetValues(b.dataset.preset, cfg.units)).every(([k, v]) => String(getField(k)) === String(v)))));
 
   $('calHead').innerHTML = `<tr><th scope="col">Week</th>${cols.map(d => `<th scope="col">${DAY_NAMES[d]}</th>`).join('')}</tr>`;
 
@@ -1468,15 +1505,28 @@ function downloadICS() {
   setStatus(`Calendar file downloaded with ${count} workouts. Open it to import.`, 8000);
 }
 let undoSnapshot = null;
-function resetPlan() {
+/* Replace settings in one undoable step (reset and presets). */
+function replaceSettings(apply, msg) {
   notices.length = 0;
   undoSnapshot = snapshot();
-  applyObject(Object.fromEntries(Object.entries(FIELDS).map(([k, f]) => [k, f.def])));
+  apply();
   if (location.search) history.replaceState(null, '', location.pathname);
   userChange = true;
   render();
   $('undoBtn').hidden = false;
-  setStatus('Settings reset to defaults.', 12000);
+  setStatus(msg, 12000);
+}
+function resetPlan() {
+  replaceSettings(() => applyObject(Object.fromEntries(Object.entries(FIELDS).map(([k, f]) => [k, f.def]))), 'Settings reset to defaults.');
+}
+function applyPreset(id) {
+  replaceSettings(() => {
+    const v = presetValues(id, getField('units'));
+    setField('goal', v.goal);
+    onGoalChange(currentGoal, v.goal);  /* taper and race/start date follow the goal, with notices */
+    currentGoal = v.goal;
+    applyObject(v);
+  }, `Applied "${PRESETS[id].name}". Fine-tune anything below.`);
 }
 function undoReset() {
   if (!undoSnapshot) return;
@@ -1583,6 +1633,7 @@ function init() {
   $('icsBtn').addEventListener('click', downloadICS);
   $('copyBtn').addEventListener('click', copyLink);
   $('resetBtn').addEventListener('click', resetPlan);
+  form.querySelector('.preset-list').addEventListener('click', e => { const b = e.target.closest('[data-preset]'); if (b) applyPreset(b.dataset.preset); });
   $('undoBtn').addEventListener('click', undoReset);
   $('matchWeeksBtn').addEventListener('click', e => { setField('weeks', e.currentTarget.dataset.weeks); userChange = true; render(); form.elements.weeks.focus(); });
   $('calBody').addEventListener('change', onDoneChange);

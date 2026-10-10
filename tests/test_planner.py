@@ -159,6 +159,59 @@ def test_reset_and_undo(page):
     assert values(page, "miles", "peakMiles", "peakLong", "weight") == ["40", "61", "29", "70"]
 
 
+PRESET_IDS = ["sofa", "comeback", "weekend", "emily", "maven", "monster"]
+
+
+def current_preset(page):
+    return page.locator('[data-preset][aria-current="true"]').evaluate_all("bs => bs.map(b => b.dataset.preset)")
+
+
+def test_preset_applies_training_settings_and_undoes(page):
+    assert current_preset(page) == ["emily"]  # the defaults are Emily's starting point
+    fill(page, "#weight", "150")
+    page.click('[data-preset="sofa"]')
+    settle(page)
+    assert values(page, "miles", "longrun", "weeks", "peakMiles", "peakLong", "weight") == ["12", "4", "24", "25", "10", "150"]
+    assert page.is_checked('input[name="goal"][value="half"]') and page.is_checked('input[name="days"][value="4"]')
+    assert current_preset(page) == ["sofa"]
+    expect(page.locator("#actionStatus")).to_have_text('Applied "Sofa Starter". Fine-tune anything below.')
+    fill(page, "#miles", "13")  # any edit means no preset matches any more
+    assert current_preset(page) == []
+    page.click('[data-preset="emily"]')
+    settle(page)
+    assert values(page, "miles", "longrun", "weeks", "peakMiles", "peakLong") == ["25", "13", "22", "38", "18"]
+    page.click("#undoBtn")
+    settle(page)
+    assert values(page, "miles", "weeks") == ["13", "24"]
+
+
+def test_presets_keep_units_and_convert(page):
+    pick(page, "units", "metric")
+    page.click('[data-preset="maven"]')
+    settle(page)
+    assert page.is_checked('input[name="units"][value="metric"]')
+    assert values(page, "miles", "longrun", "peakMiles", "peakLong") == ["64", "26", "80", "32"]
+    assert current_preset(page) == ["maven"]
+
+
+def test_preset_that_changes_race_goal_clears_date_with_notice(make_page):
+    page = make_page("?anchorDate=2027-04-18", now=NOW)
+    page.click('[data-preset="comeback"]')
+    settle(page)
+    assert page.input_value("#anchorDate") == ""
+    assert "Cleared the race date" in page.inner_text("#warnings")
+
+
+@pytest.mark.parametrize("units", ["us", "metric"])
+def test_every_preset_builds_a_clean_plan(page, units):
+    pick(page, "units", units)
+    for preset in PRESET_IDS:
+        page.click(f'[data-preset="{preset}"]')
+        settle(page)
+        assert page.inner_text("#warnings") == "", preset
+        assert current_preset(page) == [preset]
+
+
 def test_rest_day_cannot_match_long_day(page):
     assert page.evaluate("[...document.getElementById('restDay').options].filter(o => o.disabled).map(o => o.text)") == ["Saturday"]
     pick(page, "longDay", "6")  # Sunday long run while rest day is Sunday
