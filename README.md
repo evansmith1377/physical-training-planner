@@ -73,6 +73,8 @@ The suite serves the page over local HTTP, so the Content Security Policy applie
 
 **CI and deploy:** every pull request runs the tests (`.github/workflows/ci.yml`). Each merge to `main` runs them again and deploys `index.html` and `assets/` to GitHub Pages (`.github/workflows/deploy.yml`). Actions are pinned to commit SHAs, and Dependabot proposes monthly updates. One-time setup: **Settings → Pages → Build and deployment → Source: GitHub Actions**.
 
+**Branch protection:** `.github/rulesets/main.json` is a repository ruleset for `main`: changes land only through a squash-merged pull request with the `test` check passing on an up-to-date branch and all review threads resolved, and the branch can't be force-pushed or deleted. GitHub doesn't apply it automatically. Import it once under **Settings → Rules → Rulesets → New ruleset → Import a ruleset**.
+
 To host the page elsewhere, copy `index.html` and the `assets/` folder to any static host. If the address changes, update the canonical and `og:` URLs in `index.html`.
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) to propose changes, and [CLAUDE.md](CLAUDE.md) for the code map and conventions.
