@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="color-scheme" content="light dark">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-42SY8xz2uSwPytSTNMPt2wCaJt2EMTbfXb/xQnCxKVg='; style-src 'unsafe-inline'; img-src 'self' data:; base-uri 'none'; form-action 'none'; object-src 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-6ZInJsKvDQGXe8XTr/7q+k2RFAq2cLWezMtv0sWh0wc='; style-src 'unsafe-inline'; img-src 'self' data:; base-uri 'none'; form-action 'none'; object-src 'none'">
 <meta name="description" content="Free printable training calendar for the marathon or half marathon. Enter your current mileage to get a week-by-week, readiness-based plan with optional pace guidance and calendar export.">
 <link rel="canonical" href="https://evansmith1377.github.io/physical-training-planner/">
 <meta name="theme-color" content="#f3f6f8" media="(prefers-color-scheme: light)">
@@ -1119,19 +1119,19 @@ const FIELDS = {
   weekStart: { kind: 'radio', def: 'sun' }, paper: { kind: 'radio', def: 'letter' }, orientation: { kind: 'radio', def: 'landscape' },
   includeGuide: { kind: 'check', def: true }
 };
-/* Quick-start presets: training settings only, distances in miles. Units, dates, paces, days of the week and print options are left alone. */
+/* Quick-start presets (names live on the buttons): training settings only, distances in miles. Units, dates, paces, days of the week and print options are left alone. */
 const PRESETS = {
-  sofa:     { name: 'Sofa Starter', goal: 'half', miles: 12, longrun: 4, weeks: 24, peakMiles: 25, peakLong: 10, cutEvery: 3, days: 4, strength: 2 },
-  comeback: { name: 'Comeback Kid', goal: 'base', miles: 15, longrun: 6, weeks: 12, peakMiles: 25, peakLong: 10, cutEvery: 3, days: 4, strength: 2 },
-  weekend:  { name: 'Weekend Warrior', goal: 'half', miles: 22, longrun: 9, weeks: 14, peakMiles: 28, peakLong: 12, cutEvery: 4, days: 4, strength: 1 },
-  emily:    { name: "Emily's Starting Point", ...Object.fromEntries(['goal', 'miles', 'longrun', 'weeks', 'peakMiles', 'peakLong', 'cutEvery', 'days', 'strength'].map(k => [k, FIELDS[k].def])) },
-  maven:    { name: 'Marathon Maven', goal: 'marathon', miles: 40, longrun: 16, weeks: 18, peakMiles: 50, peakLong: 20, cutEvery: 4, days: 6, strength: 2 },
-  monster:  { name: 'Mileage Monster', goal: 'marathon', miles: 60, longrun: 18, weeks: 18, peakMiles: 70, peakLong: 20, cutEvery: 4, days: 6, strength: 1 }
+  sofa:     { goal: 'half', miles: 12, longrun: 4, weeks: 24, peakMiles: 25, peakLong: 10, cutEvery: 3, days: 4, strength: 2 },
+  comeback: { goal: 'base', miles: 15, longrun: 6, weeks: 12, peakMiles: 25, peakLong: 10, cutEvery: 3, days: 4, strength: 2 },
+  weekend:  { goal: 'half', miles: 22, longrun: 9, weeks: 14, peakMiles: 28, peakLong: 12, cutEvery: 4, days: 4, strength: 1 },
+  emily:    { ...Object.fromEntries(['goal', 'miles', 'longrun', 'weeks', 'peakMiles', 'peakLong', 'cutEvery', 'days', 'strength'].map(k => [k, FIELDS[k].def])) },
+  maven:    { goal: 'marathon', miles: 40, longrun: 16, weeks: 18, peakMiles: 50, peakLong: 20, cutEvery: 4, days: 6, strength: 2 },
+  monster:  { goal: 'marathon', miles: 60, longrun: 18, weeks: 18, peakMiles: 70, peakLong: 20, cutEvery: 4, days: 6, strength: 1 }
 };
 const DIST_KEYS = ['miles', 'longrun', 'peakMiles', 'peakLong'];
 /* A preset's form values in the current units (metric distances round to whole km, as unit switching does). */
 function presetValues(id, units) {
-  const { name, ...v } = PRESETS[id];
+  const v = { ...PRESETS[id] };
   if (units === 'metric') for (const k of DIST_KEYS) v[k] = Math.round(v[k] * KM_PER_MI);
   return v;
 }
@@ -1176,7 +1176,7 @@ function snapshot() { const o = {}; for (const k in FIELDS) o[k] = getField(k); 
 
 function applyUnitLabels(units) {
   const r = RANGES[units];
-  for (const k of ['miles', 'longrun', 'peakMiles', 'peakLong', 'weight']) {
+  for (const k of [...DIST_KEYS, 'weight']) {
     form.elements[k].min = r[k][0]; form.elements[k].max = r[k][1];
   }
   const metric = units === 'metric';
@@ -1194,7 +1194,7 @@ function applyUnitLabels(units) {
 function convertFields(from, to) {
   if (from === to) return;
   const toMetric = to === 'metric';
-  for (const k of ['miles', 'longrun', 'peakMiles', 'peakLong']) {
+  for (const k of DIST_KEYS) {
     const v = Number(form.elements[k].value);
     if (form.elements[k].value !== '' && Number.isFinite(v)) form.elements[k].value = Math.round(toMetric ? v * KM_PER_MI : v / KM_PER_MI);
   }
@@ -1275,8 +1275,9 @@ function render() {
   document.body.classList.toggle('print-portrait', cfg.orientation === 'portrait');
   renderHints(cal);
   /* Mark the preset that matches the current settings, if any. */
+  const now = snapshot();
   form.querySelectorAll('[data-preset]').forEach(b => b.setAttribute('aria-current', String(
-    Object.entries(presetValues(b.dataset.preset, cfg.units)).every(([k, v]) => String(getField(k)) === String(v)))));
+    Object.entries(presetValues(b.dataset.preset, cfg.units)).every(([k, v]) => String(now[k]) === String(v)))));
 
   $('calHead').innerHTML = `<tr><th scope="col">Week</th>${cols.map(d => `<th scope="col">${DAY_NAMES[d]}</th>`).join('')}</tr>`;
 
@@ -1519,14 +1520,12 @@ function replaceSettings(apply, msg) {
 function resetPlan() {
   replaceSettings(() => applyObject(Object.fromEntries(Object.entries(FIELDS).map(([k, f]) => [k, f.def]))), 'Settings reset to defaults.');
 }
-function applyPreset(id) {
+function applyPreset(id, name) {
   replaceSettings(() => {
     const v = presetValues(id, getField('units'));
-    setField('goal', v.goal);
     onGoalChange(currentGoal, v.goal);  /* taper and race/start date follow the goal, with notices */
-    currentGoal = v.goal;
     applyObject(v);
-  }, `Applied "${PRESETS[id].name}". Fine-tune anything below.`);
+  }, `Applied "${name}". Fine-tune anything below.`);
 }
 function undoReset() {
   if (!undoSnapshot) return;
@@ -1633,7 +1632,7 @@ function init() {
   $('icsBtn').addEventListener('click', downloadICS);
   $('copyBtn').addEventListener('click', copyLink);
   $('resetBtn').addEventListener('click', resetPlan);
-  form.querySelector('.preset-list').addEventListener('click', e => { const b = e.target.closest('[data-preset]'); if (b) applyPreset(b.dataset.preset); });
+  form.querySelector('.preset-list').addEventListener('click', e => { const b = e.target.closest('[data-preset]'); if (b) applyPreset(b.dataset.preset, b.querySelector('strong').textContent); });
   $('undoBtn').addEventListener('click', undoReset);
   $('matchWeeksBtn').addEventListener('click', e => { setField('weeks', e.currentTarget.dataset.weeks); userChange = true; render(); form.elements.weeks.focus(); });
   $('calBody').addEventListener('change', onDoneChange);
