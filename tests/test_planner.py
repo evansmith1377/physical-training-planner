@@ -230,7 +230,25 @@ def test_switching_race_and_durability_clears_the_date(make_page):
     fill(page, "#anchorDate", "2027-03-13")
     pick(page, "goal", "base")
     assert values(page, "anchorDate") == [""]
-    assert "Cleared the race date" in page.inner_text("#actionStatus")
+    assert "Cleared the race date" in page.inner_text("#warnings")
+
+
+def test_goal_switch_reports_every_adjustment(make_page):
+    page = make_page("?goal=base&taper=3&anchorDate=2026-10-14", now=NOW)
+    pick(page, "goal", "half")
+    warnings = page.inner_text("#warnings")
+    assert "Taper set to 2 weeks" in warnings and "Cleared the start date" in warnings
+
+
+@pytest.mark.parametrize("typed", ["0", ""])
+def test_empty_or_zero_weeks_warns(page, typed):
+    fill(page, "#weeks", typed)
+    assert "Plan length isn't set, so this calendar uses 22 weeks" in page.inner_text("#warnings")
+
+
+def test_clamp_notice_uses_clean_label(make_page):
+    page = make_page("?weight=9999")
+    assert "Body weight (lb) was outside the allowed range" in page.inner_text("#warnings")
 
 
 def test_too_few_weeks_warns_and_uses_minimum(page):
@@ -290,17 +308,19 @@ def test_race_date_sets_week_dates_and_race_day(make_page):
     assert page.inner_text('tr.week[data-week="1"] .dates') == "Oct 5 – Oct 11"
 
 
+@pytest.mark.parametrize("days", ["4", "5", "6"])
 @pytest.mark.parametrize("race,day", [
     ("2027-03-08", "Monday"), ("2027-03-09", "Tuesday"), ("2027-03-10", "Wednesday"),
     ("2027-03-11", "Thursday"), ("2027-03-12", "Friday"), ("2027-03-13", "Saturday"), ("2027-03-14", "Sunday"),
 ])
-def test_race_week_sharpening_is_at_least_3_days_out(make_page, race, day):
-    page = make_page(now=NOW)
+def test_race_week_sharpening_is_at_least_3_days_out(make_page, race, day, days):
+    page = make_page(f"?days={days}", now=NOW)
     fill(page, "#anchorDate", race)  # long runs default to Saturday
     weeks = int(values(page, "weeks")[0])
     heads = page.locator("#calHead th").all_inner_texts()[1:]
     assert heads[-1] == day and "RACE" in cell_text(page, weeks, day)  # race day ends the week
     sharpen = [d for d in heads if "at least 3 days before the race" in cell_text(page, weeks, d)]
+    assert len(sharpen) == 1 or "no room for the short sharpening session" in page.inner_text("#summary")
     assert len(sharpen) <= 1
     for d in sharpen:
         assert heads.index(day) - heads.index(d) >= 3
@@ -414,6 +434,15 @@ def test_checkmarks_follow_the_workout_not_the_grid(make_page):
     assert page.is_hidden("#clearDoneBtn")  # nothing ticked on screen
     pick(page, "longDay", "5")  # back again: the tick returns
     assert page.is_checked(long_box)
+
+
+def test_undated_ticks_move_onto_dates_when_a_date_is_added(make_page):
+    page = make_page(now=NOW)
+    sat = f'tr.week[data-week="1"] > :nth-child({column(page, "Saturday")}) input[data-done]'
+    page.check(sat)
+    fill(page, "#anchorDate", "2027-03-13")  # week 1 now has real dates; the long run tick stays
+    assert page.is_checked(f'tr.week[data-week="1"] > :nth-child({column(page, "Saturday")}) input[data-done]')
+    assert page.evaluate("JSON.parse(localStorage.getItem('ptp.done.v1'))")[0].endswith(":long")
 
 
 def test_dated_checkmarks_survive_plan_length_changes(make_page):
