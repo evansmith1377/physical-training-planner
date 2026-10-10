@@ -1,0 +1,1262 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<meta name="description" content="Free printable marathon training calendar. Enter your current mileage and preferences to generate a week-by-week, readiness-based plan with optional pace guidance.">
+<meta name="theme-color" content="#f3f6f8" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#141a21" media="(prefers-color-scheme: dark)">
+<meta property="og:title" content="Marathon Training Calendar">
+<meta property="og:description" content="Generate a printable, week-numbered marathon training plan from your current fitness.">
+<meta property="og:type" content="website">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%232f6db5'/%3E%3Cpath d='M8 23 L14 9 L18 17 L21 13 L25 23' fill='none' stroke='white' stroke-width='2.6' stroke-linejoin='round' stroke-linecap='round'/%3E%3C/svg%3E">
+<title>Marathon Training Calendar · Printable, Week-by-Week Plan</title>
+<style id="pageStyle">@page { size: letter landscape; margin: 0.4in; }</style>
+<style>
+/* ---------- Design tokens (light default; dark via prefers-color-scheme; print forced light) ---------- */
+:root {
+  color-scheme: light dark;
+  --bg:#e9eef2; --paper:#ffffff; --ink:#1d2733; --muted:#4f5d6d; --line:#c3ccd6; --soft:#f3f6f8; --field-border:#7d8a99;
+  --accent:#2f6db5; --accent-ink:#ffffff; --focus:#0b57d0;
+  --long:#2f6db5; --quality:#c46a12; --easy:#2f8a52; --rest:#8a96a3; --race:#c0392b; --off:#b9c2cc;
+  --rest-bg:#f7f9fa; --race-bg:#fdf1ef; --warn-bg:#fdf1ef; --phase-bg:#1d2733; --phase-ink:#ffffff;
+  accent-color: var(--accent);
+}
+@media screen and (prefers-color-scheme: dark) {
+  :root {
+    --bg:#0e1318; --paper:#141a21; --ink:#e4e9ee; --muted:#a3afbc; --line:#334050; --soft:#1c242d; --field-border:#6c7a8a;
+    --accent:#7fb0ec; --accent-ink:#0e1318; --focus:#9cc3ff;
+    --long:#6fa3e6; --quality:#e89a4f; --easy:#5fbf84; --rest:#7f8b98; --race:#ee7466; --off:#4a5664;
+    --rest-bg:#171e26; --race-bg:#2a1a19; --warn-bg:#2a1a19; --phase-bg:#2a3542; --phase-ink:#ffffff;
+  }
+}
+@media print { :root { color-scheme: light; } }
+@media (forced-colors: active) {
+  .phase-row td { border: 1px solid CanvasText; }
+}
+
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 1rem/1.5 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; -webkit-text-size-adjust: 100%; }
+main { overflow-x: clip; max-inline-size: 1280px; margin: clamp(0px, 2vw, 24px) auto; padding: clamp(14px, 3vw, 28px); background: var(--paper); border-radius: clamp(0px, 1vw, 8px); }
+h1, h2, h3 { line-height: 1.2; margin: 0 0 .5rem; text-wrap: balance; }
+h1 { font-size: clamp(1.6rem, 1.2rem + 1.6vw, 2.1rem); }
+h2 { font-size: 1.25rem; margin-block-start: 1.6rem; border-block-end: 2px solid var(--ink); padding-block-end: .3rem; }
+h3 { font-size: 1.05rem; margin-block-start: 1rem; }
+p { margin: .4rem 0 .7rem; }
+a { color: var(--accent); }
+.eyebrow { font-size: .8rem; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); margin: 0 0 .3rem; }
+.muted, .hint { color: var(--muted); }
+.hint { display: block; font-size: .85rem; margin-block-start: .25rem; }
+.visually-hidden { position: absolute; clip-path: inset(50%); overflow: hidden; width: 1px; height: 1px; margin: -1px; padding: 0; border: 0; white-space: nowrap; }
+:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+
+/* ---------- Form ---------- */
+.planner { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit, minmax(min(100%, 19rem), 1fr)); margin: 1rem 0; }
+.planner fieldset, .planner details { border: 1px solid var(--line); border-radius: 8px; padding: .9rem 1rem 1rem; margin: 0; min-inline-size: 0; background: var(--paper); }
+.planner legend, .planner summary { font-weight: 750; font-size: .95rem; padding-inline: .3rem; }
+.planner details { grid-column: 1 / -1; }
+.planner summary { cursor: pointer; padding: .3rem; min-block-size: 44px; display: flex; align-items: center; gap: .4rem; }
+.planner details[open] summary { margin-block-end: .5rem; }
+.field { margin-block-end: 1rem; }
+.field:last-child { margin-block-end: 0; }
+.field > label, .group-label { display: block; font-weight: 650; font-size: .92rem; margin-block-end: .3rem; }
+input[type=number], input[type=text], select {
+  inline-size: 100%; min-block-size: 48px; padding: .6rem .7rem; font: inherit; font-size: 1rem;
+  color: var(--ink); background: var(--paper); border: 1px solid var(--field-border); border-radius: 6px;
+}
+input:user-invalid { border-color: var(--race); border-width: 2px; }
+.err { display: none; color: var(--race); font-size: .85rem; margin-block-start: .25rem; }
+input:user-invalid ~ .err { display: block; }
+input:user-invalid ~ .err::before { content: "⚠ "; }
+.pace-grid { display: grid; gap: 0 1rem; grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr)); }
+.seg { display: flex; flex-wrap: wrap; gap: .4rem; border: none; padding: 0; margin: 0; }
+.seg label { display: inline-flex; align-items: center; gap: .45rem; min-block-size: 44px; padding: .45rem .8rem; border: 1px solid var(--field-border); border-radius: 999px; cursor: pointer; font-size: .95rem; user-select: none; }
+.seg label:has(input:checked) { border-color: var(--accent); background: color-mix(in oklab, var(--accent) 14%, var(--paper)); font-weight: 650; }
+.seg input { margin: 0; inline-size: 1.05rem; block-size: 1.05rem; }
+.check { display: flex; align-items: center; gap: .6rem; min-block-size: 44px; cursor: pointer; font-weight: 600; }
+.check input { inline-size: 1.2rem; block-size: 1.2rem; margin: 0; }
+@media (pointer: coarse) { input[type=number], input[type=text], select { min-block-size: 52px; } }
+
+.actions { display: flex; flex-wrap: wrap; gap: .6rem; align-items: center; margin: .5rem 0 1rem; }
+button { font: inherit; font-weight: 650; min-block-size: 48px; padding: .6rem 1.1rem; border-radius: 6px; border: 1px solid var(--ink); background: var(--paper); color: var(--ink); cursor: pointer; }
+button.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+
+/* ---------- Hints, toggletips, status ---------- */
+.optional { font-weight: 500; font-size: .78rem; color: var(--muted); border: 1px solid var(--line); border-radius: 999px; padding: 0 .45rem; margin-inline-start: .3rem; vertical-align: middle; }
+.label-row { display: flex; align-items: center; gap: .4rem; margin-block-end: .3rem; }
+.label-row > label, .label-row > .group-label { margin-block-end: 0; font-weight: 650; font-size: .92rem; }
+.tip { inline-size: 1.6rem; block-size: 1.6rem; min-block-size: 0; padding: 0; border-radius: 50%; border: 1.5px solid var(--muted); background: var(--paper); color: var(--muted); font: italic 700 .85rem/1 Georgia, "Times New Roman", serif; cursor: pointer; flex: none; position: relative; }
+.tip::after { content: ""; position: absolute; inset: -.6rem; } /* expands tap target to ~44px without changing layout */
+.tip:hover, .tip[aria-expanded="true"] { border-color: var(--accent); color: var(--accent); }
+.tipbox { display: none; position: fixed; inset: auto; margin: 0; max-inline-size: min(22rem, calc(100vw - 24px)); padding: .7rem .85rem; border: 1px solid var(--line); border-radius: 8px; background: var(--paper); color: var(--ink); font-size: .9rem; line-height: 1.45; font-weight: 400; box-shadow: 0 6px 24px rgb(0 0 0 / .18); text-align: start; }
+.tipbox:is(:popover-open, .is-open) { display: block; }
+.glossary { display: flex; flex-wrap: wrap; align-items: center; gap: .3rem 1rem; font-size: .88rem; margin: 0 0 .8rem; }
+.term { display: inline-flex; align-items: center; gap: .35rem; }
+.term .tip { inline-size: 1.35rem; block-size: 1.35rem; font-size: .75rem; }
+.action-status { font-size: .9rem; color: var(--muted); display: inline-flex; align-items: center; gap: .3rem; }
+button.linklike { min-block-size: 44px; padding: 0 .4rem; border: none; background: none; color: var(--accent); text-decoration: underline; font-weight: 650; }
+.update-note { min-block-size: 1.5em; font-size: .92rem; color: var(--easy); margin: .2rem 0 0; }
+.update-note a { margin-inline-start: .4rem; }
+.skip { position: absolute; inset-inline-start: 1rem; inset-block-start: -10rem; z-index: 10; background: var(--accent); color: var(--accent-ink); padding: .6rem 1rem; border-radius: 6px; font-weight: 700; }
+.skip:focus { inset-block-start: 1rem; }
+#planHeading { scroll-margin-block-start: 1rem; }
+#planHeading:focus { outline: none; }
+
+/* ---------- Summary & legend ---------- */
+.summary { border: 1px solid var(--line); background: var(--soft); border-radius: 8px; padding: .8rem 1rem; margin: .8rem 0; }
+.summary ul { margin: .4rem 0 0; padding-inline-start: 1.2rem; }
+.summary li { margin: .15rem 0; }
+.warn { border-inline-start: 4px solid var(--race); padding: .5rem .8rem; background: var(--warn-bg); margin: .5rem 0; font-size: .95rem; border-radius: 0 6px 6px 0; }
+.warn::before { content: "⚠ "; }
+.legend { display: flex; flex-wrap: wrap; gap: .4rem 1rem; font-size: .88rem; margin: .6rem 0; padding: 0; list-style: none; }
+.legend li { display: inline-flex; align-items: center; gap: .4rem; }
+.legend i { display: inline-block; inline-size: 14px; block-size: 14px; border-inline-start: 5px solid; background: var(--soft); }
+
+/* ---------- Calendar ---------- */
+.cal-wrap { container-type: inline-size; }
+.calendar { inline-size: 100%; border-collapse: collapse; table-layout: fixed; font-size: .82rem; }
+.calendar th, .calendar td { border: 1px solid var(--line); padding: .35rem .45rem; vertical-align: top; text-align: start; }
+.calendar thead th { background: var(--soft); font-size: .8rem; }
+.calendar col.wk { inline-size: 9.5%; }
+.wkcell { font-weight: 400; background: var(--soft); }
+.wkcell .n { font-weight: 800; font-size: 1rem; }
+.wkcell .ph { color: var(--muted); font-size: .75rem; }
+.wkcell .tot { font-weight: 700; }
+.tag { display: inline-block; font-size: .66rem; font-weight: 700; border: 1px solid var(--muted); border-radius: 3px; padding: 0 .3rem; margin: .15rem .15rem 0 0; text-transform: uppercase; letter-spacing: .03em; }
+.tag.cut { border-color: var(--easy); color: var(--easy); }
+.tag.peak { border-color: var(--long); color: var(--long); }
+.tag.race { border-color: var(--race); color: var(--race); }
+.day { border-inline-start: 5px solid var(--off) !important; position: relative; overflow-wrap: anywhere; }
+.day.long { border-inline-start-color: var(--long) !important; }
+.day.quality { border-inline-start-color: var(--quality) !important; }
+.day.easy { border-inline-start-color: var(--easy) !important; }
+.day.rest { border-inline-start-color: var(--rest) !important; background: var(--rest-bg); }
+.day.off { border-inline-start-color: var(--off) !important; background: var(--rest-bg); }
+.day.race { border-inline-start-color: var(--race) !important; background: var(--race-bg); }
+.day .t { font-weight: 750; }
+.day .d { color: var(--muted); font-size: .74rem; line-height: 1.3; }
+.day .p { font-size: .74rem; font-weight: 650; line-height: 1.3; }
+.day .s { font-size: .72rem; font-weight: 700; margin-block-start: .15rem; }
+.day .dlabel { display: none; }
+.day .box { display: none; }
+.phase-row td { background: var(--phase-bg); color: var(--phase-ink); font-size: .8rem; padding: .35rem .6rem; }
+.phase-row strong { margin-inline-end: .4rem; }
+.calendar tfoot td { font-size: .75rem; color: var(--muted); border: none; padding-block-start: .5rem; }
+
+/* Mobile / narrow container: each week becomes a stacked card */
+@media screen {
+  @container (width < 46rem) {
+    .calendar, .calendar tbody, .calendar tfoot, .calendar tr, .calendar th, .calendar td { display: block; }
+    .calendar thead, .calendar colgroup { display: none; }
+    .calendar tr.week { border: 1px solid var(--line); border-radius: 8px; margin-block-end: .9rem; }
+    .calendar tr.phase-row td { border-radius: 8px; margin-block: 1.2rem .6rem; border: none; font-size: .88rem; }
+    .calendar th.wkcell { position: sticky; inset-block-start: 0; z-index: 1; border: none; border-block-end: 1px solid var(--line); border-radius: 8px 8px 0 0; display: flex; flex-wrap: wrap; align-items: baseline; gap: .1rem .6rem; padding: .55rem .75rem; }
+    .calendar td.day { border: none !important; border-block-start: 1px solid var(--line) !important; border-inline-start: 6px solid var(--off) !important; display: grid; grid-template-columns: 3rem 1fr; gap: .6rem; padding: .55rem .75rem; font-size: .92rem; }
+    .calendar td.day.long { border-inline-start-color: var(--long) !important; }
+    .calendar td.day.quality { border-inline-start-color: var(--quality) !important; }
+    .calendar td.day.easy { border-inline-start-color: var(--easy) !important; }
+    .calendar td.day.rest { border-inline-start-color: var(--rest) !important; }
+    .calendar td.day.race { border-inline-start-color: var(--race) !important; }
+    .calendar tr.week td.day:last-child { border-radius: 0 0 0 8px; }
+    .day .dlabel { display: block; font-weight: 750; color: var(--muted); }
+    .day .d, .day .p, .day .s { font-size: .85rem; }
+    .calendar tfoot td { padding: 0; }
+  }
+}
+
+/* ---------- Reference guide ---------- */
+.guide table { inline-size: 100%; border-collapse: collapse; margin: .5rem 0 1rem; }
+.guide th, .guide td { border: 1px solid var(--line); padding: .45rem .55rem; vertical-align: top; text-align: start; font-size: .92rem; }
+.guide th { background: var(--soft); }
+.guide .scroll { overflow-x: auto; }
+.guide ul, .guide ol { padding-inline-start: 1.4rem; }
+.guide li { margin: .2rem 0; }
+.checklist { columns: 2 16rem; list-style: none; padding-inline-start: 0 !important; }
+.note { font-size: .92rem; border-inline-start: 4px solid var(--muted); padding: .5rem .8rem; background: var(--soft); }
+footer.site { margin-block-start: 1.5rem; font-size: .85rem; color: var(--muted); }
+
+/* ---------- Print: landscape calendar ---------- */
+@media print {
+  * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  body { background: #fff; font-size: 9pt; color: #000; }
+  main { max-inline-size: none; margin: 0; padding: 0; border-radius: 0; }
+  .no-print { display: none !important; }
+  h1 { font-size: 15pt; margin-block-end: 2pt; }
+  h2 { font-size: 12pt; margin-block-start: 10pt; }
+  .eyebrow, .intro { display: none; }
+  .summary { padding: 4pt 8pt; margin: 3pt 0; font-size: 8pt; background: #fff; }
+  .summary ul { margin-block-start: 2pt; }
+  .warn { font-size: 8pt; padding: 3pt 6pt; }
+  .legend { font-size: 7.5pt; margin: 3pt 0; }
+  .calendar { font-size: 7.2pt; }
+  .calendar th, .calendar td { padding: 2.5pt 3.5pt; border-color: #999; }
+  .calendar thead { display: table-header-group; }
+  .calendar tfoot { display: table-footer-group; }
+  .calendar tr { break-inside: avoid; }
+  .wkcell .n { font-size: 9pt; }
+  .wkcell .ph { font-size: 6.6pt; }
+  .calendar tfoot td { font-size: 6.8pt; }
+  .day .t { padding-inline-end: 10pt; }
+  .day .d, .day .p { font-size: 6.6pt; }
+  .day .s { font-size: 6.5pt; }
+  .tag { font-size: 5.8pt; }
+  .day .box { display: block; position: absolute; inset-block-start: 3pt; inset-inline-end: 3pt; inline-size: 7pt; block-size: 7pt; border: 1px solid #555; }
+  .day.rest .box, .day.off.nobox .box { display: none; }
+  .guide { break-before: page; font-size: 8.5pt; }
+  .guide th, .guide td { font-size: 8pt; padding: 3pt 5pt; }
+  .guide h2, .guide h3 { break-after: avoid; }
+  .guide table, .guide .note { break-inside: avoid; }
+  body.no-guide .guide { display: none; }
+  /* Portrait: narrower page, so tighten the 7-day grid */
+  body.print-portrait .calendar { font-size: 6.4pt; }
+  body.print-portrait .calendar col.wk { inline-size: 11%; }
+  body.print-portrait .calendar th, body.print-portrait .calendar td { padding: 2pt 2.5pt; }
+  body.print-portrait .day { border-inline-start-width: 3pt !important; }
+  body.print-portrait .day .d, body.print-portrait .day .p { font-size: 5.9pt; }
+  body.print-portrait .day .s { font-size: 5.8pt; }
+  body.print-portrait .wkcell .n { font-size: 8pt; }
+  body.print-portrait .phase-row td { font-size: 6.8pt; }
+  body.print-portrait .summary, body.print-portrait .legend { font-size: 7pt; }
+  footer.site { display: none; }
+  a { color: #000; }
+}
+</style>
+</head>
+<body>
+<a class="skip" href="#planHeading">Skip to your calendar</a>
+<main>
+
+<header>
+  <p class="eyebrow">Printable · Week-numbered · Readiness-based</p>
+  <h1>Marathon Training Calendar</h1>
+  <p class="intro muted">Enter where you are now and how you like to train; the calendar below updates as you type. Weeks are numbered, not dated, so start whenever you're ready and repeat a week if recovery is poor. General fitness guidance, not medical advice.</p>
+</header>
+
+<noscript><p class="warn">This planner needs JavaScript to build your calendar. The reference guide below still works without it.</p></noscript>
+
+<form id="planForm" class="no-print" novalidate>
+  <div class="planner">
+
+    <fieldset>
+      <legend>Where you are now</legend>
+      <div class="field">
+        <span class="group-label" id="unitsLabel">Units</span>
+        <div class="seg" role="radiogroup" aria-labelledby="unitsLabel">
+          <label><input type="radio" name="units" value="us" checked> US (mi, lb)</label>
+          <label><input type="radio" name="units" value="metric"> Metric (km, kg)</label>
+        </div>
+        <span class="hint">Switching converts what you've already entered.</span>
+      </div>
+      <div class="field">
+        <label for="miles">Usual weekly distance (<span data-u="dist">mi</span>)</label>
+        <input id="miles" name="miles" type="number" inputmode="decimal" min="12" max="45" step="1" value="25" required enterkeyhint="next" aria-describedby="milesHint milesErr">
+        <span class="hint" id="milesHint">Your average over the last 3–4 weeks, not your best week.</span>
+        <span class="err" id="milesErr" data-range="miles"></span>
+      </div>
+      <div class="field">
+        <label for="longrun">Longest comfortable recent run (<span data-u="dist">mi</span>)</label>
+        <input id="longrun" name="longrun" type="number" inputmode="decimal" min="4" max="20" step="1" value="13" required enterkeyhint="next" aria-describedby="longHint longErr">
+        <span class="hint" id="longHint">Within the last month, and you recovered within a day or two.</span>
+        <span class="err" id="longErr" data-range="longrun"></span>
+      </div>
+      <div class="field">
+        <label for="weight">Body weight (<span data-u="weight">lb</span>) <span class="optional">optional</span></label>
+        <input id="weight" name="weight" type="number" inputmode="decimal" min="70" max="550" step="1" enterkeyhint="next" aria-describedby="weightHint weightErr">
+        <span class="hint" id="weightHint">Only used to show a rough calorie estimate for each week's running. It stays in your browser.</span>
+        <span class="err" id="weightErr" data-range="weight"></span>
+      </div>
+    </fieldset>
+
+    <fieldset>
+      <legend>Plan shape</legend>
+      <div class="field">
+        <span class="group-label" id="goalLabel">Goal</span>
+        <div class="seg" role="radiogroup" aria-labelledby="goalLabel" aria-describedby="goalHint">
+          <label><input type="radio" name="goal" value="race" checked> Marathon at end</label>
+          <label><input type="radio" name="goal" value="base"> Build durability</label>
+        </div>
+        <span class="hint" id="goalHint"></span>
+      </div>
+      <div class="field">
+        <label for="weeks">Plan length (weeks)</label>
+        <input id="weeks" name="weeks" type="number" inputmode="numeric" min="6" max="30" step="1" value="22" required enterkeyhint="next" aria-describedby="weeksHint weeksErr">
+        <span class="hint" id="weeksHint"></span>
+        <span class="err" id="weeksErr">Enter a whole number from 6 to 30.</span>
+      </div>
+      <div class="field">
+        <div class="label-row">
+          <label for="peakMiles">Peak weekly distance (<span data-u="dist">mi</span>)</label>
+          <button type="button" class="tip" popovertarget="tipPeakMiles" aria-label="About peak weekly distance">i</button>
+          <div id="tipPeakMiles" popover class="tipbox">The biggest week the plan builds to. You don't need high mileage to finish a first marathon; more volume can help performance but adds load and injury risk. You only reach the peak if earlier weeks go well.</div>
+        </div>
+        <input id="peakMiles" name="peakMiles" type="number" inputmode="decimal" min="25" max="45" step="1" value="38" required enterkeyhint="next" aria-describedby="peakMilesHint peakMilesErr">
+        <span class="hint" id="peakMilesHint" data-hint="peakMiles"></span>
+        <span class="err" id="peakMilesErr" data-range="peakMiles"></span>
+      </div>
+      <div class="field">
+        <div class="label-row">
+          <label for="peakLong">Peak long run (<span data-u="dist">mi</span>)</label>
+          <button type="button" class="tip" popovertarget="tipPeakLong" aria-label="About peak long run">i</button>
+          <div id="tipPeakLong" popover class="tipbox">The longest run in the plan, usually 3–5 weeks before race day. The long run is kept to about half of that week's total distance, so a low peak weekly distance can cap it below what you enter here.</div>
+        </div>
+        <input id="peakLong" name="peakLong" type="number" inputmode="decimal" min="12" max="20" step="1" value="18" required enterkeyhint="next" aria-describedby="peakLongHint peakLongErr">
+        <span class="hint" id="peakLongHint" data-hint="peakLong"></span>
+        <span class="err" id="peakLongErr" data-range="peakLong"></span>
+      </div>
+      <div class="field">
+        <div class="label-row">
+          <span class="group-label" id="cutLabel">Cutback week</span>
+          <button type="button" class="tip" popovertarget="tipCut" aria-label="About cutback weeks">i</button>
+          <div id="tipCut" popover class="tipbox">A lighter week, about 25% less distance and a shorter long run, that lets your body absorb the training before the next build. Choose every 3rd week if you're new to this volume or tend to recover slowly.</div>
+        </div>
+        <div class="seg" role="radiogroup" aria-labelledby="cutLabel">
+          <label><input type="radio" name="cutEvery" value="3"> Every 3rd</label>
+          <label><input type="radio" name="cutEvery" value="4" checked> Every 4th</label>
+        </div>
+      </div>
+      <div class="field" id="taperField">
+        <div class="label-row">
+          <span class="group-label" id="taperLabel">Taper</span>
+          <button type="button" class="tip" popovertarget="tipTaper" aria-label="About the taper">i</button>
+          <div id="tipTaper" popover class="tipbox">The final weeks before the race. Distance drops step by step, but you keep a few short, familiar faster efforts so you arrive fresh rather than flat. Three weeks is the most common; two suits lower-mileage plans.</div>
+        </div>
+        <div class="seg" role="radiogroup" aria-labelledby="taperLabel">
+          <label><input type="radio" name="taper" value="2"> 2 weeks</label>
+          <label><input type="radio" name="taper" value="3" checked> 3 weeks</label>
+        </div>
+      </div>
+    </fieldset>
+
+    <fieldset>
+      <legend>Your week</legend>
+      <div class="field">
+        <span class="group-label" id="daysLabel">Running days per week</span>
+        <div class="seg" role="radiogroup" aria-labelledby="daysLabel" aria-describedby="daysHint">
+          <label><input type="radio" name="days" value="4"> 4</label>
+          <label><input type="radio" name="days" value="5" checked> 5</label>
+          <label><input type="radio" name="days" value="6"> 6</label>
+        </div>
+        <span class="hint" id="daysHint">5 is recommended. 4 means fewer, longer runs; 6 adds a short recovery jog.</span>
+      </div>
+      <div class="field">
+        <span class="group-label" id="longDayLabel">Long-run day</span>
+        <div class="seg" role="radiogroup" aria-labelledby="longDayLabel">
+          <label><input type="radio" name="longDay" value="5" checked> Saturday</label>
+          <label><input type="radio" name="longDay" value="6"> Sunday</label>
+        </div>
+      </div>
+      <div class="field">
+        <label for="restDay">Full rest day</label>
+        <select id="restDay" name="restDay" aria-describedby="restHint">
+          <option value="6" selected>Sunday</option><option value="0">Monday</option><option value="1">Tuesday</option>
+          <option value="2">Wednesday</option><option value="3">Thursday</option><option value="4">Friday</option><option value="5">Saturday</option>
+        </select>
+        <span class="hint" id="restHint">A true day off every week. The workout and short runs are arranged around it.</span>
+      </div>
+      <div class="field">
+        <div class="label-row">
+          <span class="group-label" id="strLabel">Strength sessions per week</span>
+          <button type="button" class="tip" popovertarget="tipStrength" aria-label="About strength sessions">i</button>
+          <div id="tipStrength" popover class="tipbox">Short (20–30 min) sessions of squats, calf raises, hinges and core work, placed on easy-run days and never the day before the long run. They start light and ease off in cutback and taper weeks. The exercises are in the reference guide below.</div>
+        </div>
+        <div class="seg" role="radiogroup" aria-labelledby="strLabel">
+          <label><input type="radio" name="strength" value="0"> None</label>
+          <label><input type="radio" name="strength" value="1"> 1</label>
+          <label><input type="radio" name="strength" value="2" checked> 2</label>
+        </div>
+      </div>
+    </fieldset>
+
+    <fieldset>
+      <legend>Printing</legend>
+      <div class="field">
+        <span class="group-label" id="wsLabel">Calendar week starts on</span>
+        <div class="seg" role="radiogroup" aria-labelledby="wsLabel" aria-describedby="wsHint">
+          <label><input type="radio" name="weekStart" value="sun" checked> Sunday</label>
+          <label><input type="radio" name="weekStart" value="mon"> Monday</label>
+        </div>
+        <span class="hint" id="wsHint">Changes the column order only, not the plan.</span>
+      </div>
+      <div class="field">
+        <span class="group-label" id="orientLabel">Orientation</span>
+        <div class="seg" role="radiogroup" aria-labelledby="orientLabel" aria-describedby="orientHint">
+          <label><input type="radio" name="orientation" value="landscape" checked> Landscape</label>
+          <label><input type="radio" name="orientation" value="portrait"> Portrait</label>
+        </div>
+        <span class="hint" id="orientHint">Landscape gives each day more room. Portrait fits more weeks per page with smaller text.</span>
+      </div>
+      <div class="field">
+        <span class="group-label" id="paperLabel">Paper size</span>
+        <div class="seg" role="radiogroup" aria-labelledby="paperLabel">
+          <label><input type="radio" name="paper" value="letter" checked> US Letter</label>
+          <label><input type="radio" name="paper" value="A4"> A4</label>
+        </div>
+      </div>
+      <div class="field">
+        <label class="check"><input type="checkbox" id="includeGuide" name="includeGuide" checked aria-describedby="guideHint"> Include reference guide pages</label>
+        <span class="hint" id="guideHint">Adds pages on effort, nutrition, strength exercises, hydration and safety after the calendar.</span>
+      </div>
+    </fieldset>
+
+    <details id="paceDetails">
+      <summary>Pacing <span class="optional">optional</span> — add suggested <span data-u="pace">min/mi</span> paces alongside effort</summary>
+      <div class="label-row" style="margin-block-end:.4rem">
+        <p class="hint" style="margin:0">Enter a recent race result, the paces you already know, or both. Leave everything blank for effort-only guidance.</p>
+        <button type="button" class="tip" popovertarget="tipPaceCalc" aria-label="How paces are calculated">i</button>
+        <div id="tipPaceCalc" popover class="tipbox">Paces come from the Daniels/Gilbert race-equivalency formulas, which estimate equal-effort paces from one race result. Easy covers roughly 62–70% of your aerobic capacity, tempo about 88%, and the marathon range adds a 15-second-per-mile buffer to the predicted pace. These formulas tend to be optimistic for a first marathon, so treat paces as a ceiling and let effort decide.</div>
+      </div>
+      <div class="pace-grid">
+        <div class="field">
+          <label for="raceDist">Recent race distance</label>
+          <select id="raceDist" name="raceDist">
+            <option value="5000">5K</option>
+            <option value="10000">10K</option>
+            <option value="16093.4">10 miles</option>
+            <option value="21097.5" selected>Half marathon</option>
+            <option value="42195">Marathon</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="raceTime">Finish time</label>
+          <input id="raceTime" name="raceTime" type="text" placeholder="1:50:00" pattern="^\s*\d{1,2}(:\d{1,2}){1,2}\s*$" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" enterkeyhint="next" aria-describedby="raceTimeHint raceTimeErr">
+          <span class="hint" id="raceTimeHint">h:mm:ss, or mm:ss for a 5K or 10K. Use a hard race effort from the last 3 months.</span>
+          <span class="err" id="raceTimeErr">Use h:mm:ss (1:50:00) or mm:ss (24:30).</span>
+        </div>
+        <div class="field">
+          <label for="easyPace">Your comfortable easy pace (<span data-u="pace">min/mi</span>)</label>
+          <input id="easyPace" name="easyPace" type="text" placeholder="10:15" pattern="^\s*\d{1,2}:\d{2}\s*$" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" enterkeyhint="next" aria-describedby="easyHint easyErr">
+          <span class="hint" id="easyHint">The pace you can hold while chatting. Overrides the calculated easy range.</span>
+          <span class="err" id="easyErr">Use m:ss, for example 10:15.</span>
+        </div>
+        <div class="field">
+          <label for="mpPace">Goal marathon pace (<span data-u="pace">min/mi</span>)</label>
+          <input id="mpPace" name="mpPace" type="text" placeholder="9:15" pattern="^\s*\d{1,2}:\d{2}\s*$" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" enterkeyhint="done" aria-describedby="mpHint mpErr">
+          <span class="hint" id="mpHint">Replaces the race estimate for marathon-effort sessions. You'll get a warning if it's faster than your race result predicts.</span>
+          <span class="err" id="mpErr">Use m:ss, for example 9:15.</span>
+        </div>
+      </div>
+    </details>
+  </div>
+
+  <div class="actions">
+    <button type="button" class="primary" id="printBtn">Print / Save as PDF</button>
+    <button type="button" id="copyBtn" aria-describedby="copyHint">Copy link to this plan</button>
+    <button type="button" id="resetBtn">Reset to defaults</button>
+    <span class="action-status" role="status"><span id="copyStatus"></span> <button type="button" id="undoBtn" class="linklike" hidden>Undo</button></span>
+  </div>
+  <p class="hint" id="copyHint">The link saves all your settings, so you can bookmark it or send it to someone.</p>
+  <p class="hint">Printing tip: if your browser doesn't pick up the orientation automatically, choose it in the print dialog, and turn off headers and footers. On a phone, use your browser's Share → Print to save a PDF.</p>
+  <p class="update-note" id="liveStatus" role="status"></p>
+</form>
+
+<section aria-labelledby="planHeading">
+  <h2 id="planHeading" class="visually-hidden" tabindex="-1">Your training calendar</h2>
+  <div id="summary" class="summary"></div>
+  <div id="warnings"></div>
+  <ul class="legend" aria-label="Legend">
+    <li><i style="border-color:var(--long)"></i>Long run</li>
+    <li><i style="border-color:var(--quality)"></i>Optional quality — run easy instead if not recovered</li>
+    <li><i style="border-color:var(--easy)"></i>Easy / conversational</li>
+    <li><i style="border-color:var(--rest)"></i>Full rest</li>
+    <li><i style="border-color:var(--off)"></i>Off / optional cross-training</li>
+    <li><i style="border-color:var(--race)"></i>Race</li>
+  </ul>
+  <div class="glossary no-print">
+    <span class="muted">What the terms mean:</span>
+    <span class="term">Strides <button type="button" class="tip" popovertarget="gStrides" aria-label="What are strides?">i</button></span>
+    <div id="gStrides" popover class="tipbox">Short, relaxed accelerations of 15–20 seconds at the end of an easy run, with a full walk or jog recovery between them. Quick and smooth, never a sprint. They're optional; skip them if they're new to you or anything hurts.</div>
+    <span class="term">Tempo <button type="button" class="tip" popovertarget="gTempo" aria-label="What is tempo running?">i</button></span>
+    <div id="gTempo" popover class="tipbox">"Comfortably hard," about 6–7 out of 10. You can say a few words but not hold a conversation. Done as intervals inside an easy run, with easy running before and after.</div>
+    <span class="term">Marathon effort <button type="button" class="tip" popovertarget="gMP" aria-label="What is marathon effort?">i</button></span>
+    <div id="gMP" popover class="tipbox">The effort you could sustain for the whole race: steady and controlled, a little quicker than easy. It's rehearsed in short segments during the marathon-specific phase.</div>
+    <span class="term">Cutback <button type="button" class="tip" popovertarget="gCut" aria-label="What is a cutback week?">i</button></span>
+    <div id="gCut" popover class="tipbox">A planned lighter week, about 25% less distance, that lets your body adapt. It doesn't mean you're behind, so don't add miles back in.</div>
+    <span class="term">Readiness gate <button type="button" class="tip" popovertarget="gGate" aria-label="What is a readiness gate?">i</button></span>
+    <div id="gGate" popover class="tipbox">The dark bars between phases list what should be true before you move on. If you're not there yet, repeat a week or two and shift the rest of the plan back. Weeks are numbered, not dated, for exactly this reason.</div>
+  </div>
+  <div class="cal-wrap">
+    <table class="calendar" id="calendar">
+      <caption class="visually-hidden">Week-by-week training calendar</caption>
+      <colgroup><col class="wk"><col><col><col><col><col><col><col></colgroup>
+      <thead id="calHead"></thead>
+      <tbody id="calBody"></tbody>
+      <tfoot><tr><td colspan="8" id="calFoot"></td></tr></tfoot>
+    </table>
+  </div>
+</section>
+
+<!-- ===================== REFERENCE GUIDE ===================== -->
+<section class="guide" aria-labelledby="guideHeading">
+<h2 id="guideHeading">Reference guide</h2>
+
+<h3>Effort and pace</h3>
+<div class="scroll"><table>
+<thead><tr><th scope="col">Type</th><th scope="col">Effort cue</th><th scope="col">How to use it</th></tr></thead>
+<tbody>
+<tr><td>Easy / recovery</td><td>3–4/10; full sentences</td><td>Default for most runs. Pace is secondary on hot, hilly, windy, or low-energy days.</td></tr>
+<tr><td>Long run</td><td>3–4/10 early, controlled late</td><td>Easy through most of the build. Walk breaks are fine. Practice fuel and fluids on runs over 75–90 minutes.</td></tr>
+<tr><td>Strides (optional)</td><td>Fast but relaxed, never all-out</td><td>4–6 × 15–20 s with full easy recovery, only if familiar and pain-free.</td></tr>
+<tr><td>Tempo</td><td>About 6–7/10, comfortably hard</td><td>Short intervals inside an easy run. Not a time trial.</td></tr>
+<tr><td>Marathon effort</td><td>Controlled, sustainable</td><td>Introduced in the marathon-specific phase. Treat suggested paces as a starting point and confirm them in training.</td></tr>
+</tbody></table></div>
+<p><strong>About suggested paces:</strong> a recent race result is useful evidence of fitness, but equivalency formulas tend to be optimistic for the marathon, especially for first-timers or runners under about 40 mi (65 km) per week. Start marathon-effort work at the slower end of the range, and never turn easy days into pace tests.</p>
+
+<h3>Readiness gates (the calendar assumes you pass these)</h3>
+<ul>
+<li><strong>Into Build:</strong> several consistent weeks, normal sleep/appetite/mood, no persistent pain, long runs recovered within ~24–48 h.</li>
+<li><strong>Into Marathon-specific:</strong> 30–35 mi (48–56 km) per week feels sustainable and 14–16 mi (23–26 km) long runs are comfortable, with no recurring pain or lingering fatigue.</li>
+<li><strong>If you don't pass:</strong> repeat the previous week (or block) and slide the remaining weeks back. There's no penalty for repeating.</li>
+<li><strong>Peak long run</strong> of 16–20 mi (26–32 km) is a ceiling, not a requirement. Don't attempt the upper end if shorter peaks leave you depleted or sore.</li>
+</ul>
+
+<h3>Nutrition</h3>
+<ul>
+<li><strong>No fixed calorie target</strong> without age, sex, height, weight, health context, and activity. Eat enough for daily needs plus training; avoid intentional restriction while building endurance unless supervised.</li>
+<li><strong>Running energy:</strong> roughly 1 kcal per kg per km (≈0.7 kcal per lb per mile). Add it to usual needs — it's not a ceiling.</li>
+<li><strong>Carbohydrate:</strong> about 5–7 g/kg/day in moderate training, more on long or demanding days as tolerated. <strong>Protein:</strong> about 1.2–1.6 g/kg/day, spread across meals.</li>
+<li><strong>Before long runs:</strong> familiar carb-rich meal or snack 1–4 h before. <strong>During runs over 75–90 min:</strong> practice 30–60 g carbs/hour; build toward more only gradually. <strong>After:</strong> carbs + protein + fluids.</li>
+<li><strong>Low-energy warning signs:</strong> persistent fatigue, declining performance, irritability, frequent illness, poor sleep, recurrent injury, cold sensitivity, menstrual changes, reduced libido. Reduce load and consult a clinician or sports dietitian.</li>
+</ul>
+
+<h3>Strength workouts</h3>
+<div class="scroll"><table>
+<thead><tr><th scope="col">Workout A — squat / calf / trunk</th><th scope="col">Dose</th><th scope="col">Workout B — hinge / single-leg / upper</th><th scope="col">Dose</th></tr></thead>
+<tbody>
+<tr><td>Goblet squat or sit-to-stand</td><td>2 × 6–10</td><td>Dumbbell Romanian deadlift / hip hinge</td><td>2 × 6–10</td></tr>
+<tr><td>Standing calf raise</td><td>2 × 8–12</td><td>Reverse lunge or supported split squat</td><td>2 × 6–8 each</td></tr>
+<tr><td>Step-up or split squat</td><td>2 × 6–8 each</td><td>Seated / bent-knee calf raise</td><td>2 × 10–15</td></tr>
+<tr><td>Glute bridge or hip thrust</td><td>2 × 8–12</td><td>Hamstring curl (machine or sliders)</td><td>2 × 8–12</td></tr>
+<tr><td>Dead bug or plank</td><td>2 × 20–40 s</td><td>Row or incline push-up; side plank or bird dog</td><td>2 × 8–12 / 20–40 s</td></tr>
+</tbody></table></div>
+<ul>
+<li>Weeks 1–2: 1–2 sets, light, 3–4 reps in reserve. Weeks 3–6: 2 sets if soreness resolves in 24–48 h. Later: 2–3 × 6–10 on key lifts, still well short of failure.</li>
+<li>Pair strength with easy runs; never hard lower-body work the day before the long run. One consistent session beats two that hurt your running.</li>
+<li>Muscle effort is expected; sharp, joint, or worsening pain, numbness, or a gait change is not — stop and get advice.</li>
+</ul>
+
+<h3>Hydration</h3>
+<div class="scroll"><table>
+<tbody>
+<tr><th scope="row">Before</th><td>Start normally hydrated; drink with meals and to thirst. Don't force large volumes.</td></tr>
+<tr><th scope="row">Long runs / heat</th><td>Carry or plan fluids; consider electrolytes for long, sweaty, or hot sessions. Estimate sweat rate from pre/post body mass, accounting for fluid taken in.</td></tr>
+<tr><th scope="row">After</th><td>Drink to thirst with food; after heavy sweating replace fluid and sodium with meals rather than chugging.</td></tr>
+<tr><th scope="row">Avoid</th><td>Gaining weight during exercise from drinking — overhydration can cause dangerous hyponatremia.</td></tr>
+</tbody></table></div>
+<p class="note"><strong>Possible heat illness:</strong> unusual weakness, dizziness, nausea, headache, chills in heat, or worsening coordination — stop, cool down, get help as needed. Confusion, collapse, seizure, or altered mental status is an emergency: call emergency services and start rapid cooling.</p>
+
+<h3>When to modify, stop, or seek care</h3>
+<ul>
+<li><strong>Modify or rest:</strong> poor sleep, illness, heavy legs that don't improve in warm-up, soreness that changes your stride, fatigue lasting more than 1–2 days.</li>
+<li><strong>Stop and get assessed:</strong> localized bone pain, pain that worsens as you run, swelling, limping, pain at rest or night, recurring symptoms.</li>
+<li><strong>Urgent care:</strong> chest pressure/pain, fainting, severe or unusual shortness of breath, palpitations with dizziness, confusion, collapse.</li>
+<li><strong>Check with a clinician first</strong> if you have cardiovascular, metabolic, kidney, or other significant conditions, take medicines affecting heart rate or fluid balance, are pregnant/postpartum, or have a history of eating disorder or stress fractures.</li>
+</ul>
+
+<h3>Weekly self-check</h3>
+<ul class="checklist">
+<li>□ I slept reasonably well.</li>
+<li>□ Appetite and energy feel normal.</li>
+<li>□ No pain is changing my stride.</li>
+<li>□ Easy pace feels easy.</li>
+<li>□ I fueled longer sessions.</li>
+<li>□ I drank to thirst and considered conditions.</li>
+<li>□ I had at least one rest day.</li>
+<li>□ I didn't make up missed runs.</li>
+<li>□ I could repeat this week without dread.</li>
+<li>□ I'm willing to hold or reduce load if needed.</li>
+</ul>
+<p><strong>Decision rule:</strong> several "no" answers → repeat or reduce the week. Persistent or worsening symptoms → stop and seek professional advice.</p>
+
+<h3>Evidence and references</h3>
+<ol>
+<li>Damsted C, et al. Changes in training load and running-related injuries: systematic review. <em>Int J Sports Phys Ther</em> (2018). <a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC6253751/" rel="noopener">Full text</a></li>
+<li>Fredette A, et al. Running injuries and training parameters: systematic review. <em>J Athl Train</em> (2022). <a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC9528699/" rel="noopener">Full text</a></li>
+<li>Thomas DT, Erdman KA, Burke LM. Nutrition and Athletic Performance. Joint position statement (2016). <a href="https://pubmed.ncbi.nlm.nih.gov/26920240/" rel="noopener">PubMed</a></li>
+<li>ACSM. Exercise and Fluid Replacement. <em>Med Sci Sports Exerc</em> (2007). <a href="https://pubmed.ncbi.nlm.nih.gov/17277604/" rel="noopener">PubMed</a></li>
+<li>Roberts WO, et al. ACSM Expert Consensus Statement on Exertional Heat Illness (2023). <a href="https://pubmed.ncbi.nlm.nih.gov/37036463/" rel="noopener">PubMed</a></li>
+<li>Wang Z, et al. Effects of tapering on performance in endurance athletes: meta-analysis. <em>PLOS ONE</em> (2023). <a href="https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0282838" rel="noopener">Full text</a></li>
+</ol>
+<p class="muted">These sources inform the plan but can't determine individual medical risk or guarantee injury prevention. For exact calorie needs, a personalized pace prescription, or a race-specific plan, work with a credentialed professional.</p>
+</section>
+
+<footer class="site">Your settings stay in this browser; nothing is sent to a server. General fitness guidance only — not medical advice.</footer>
+</main>
+
+<script>
+'use strict';
+/* =============================== constants & helpers =============================== */
+const DAY_NAMES = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
+const DAY_SHORT = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+const KM_PER_MI = 1.609344, LB_PER_KG = 2.20462, M_PER_MI = 1609.344;
+const mod7 = i => ((i % 7) + 7) % 7;
+const r05 = x => Math.round(x * 2) / 2;
+const f05 = x => Math.floor(x * 2) / 2;
+const clamp = (x, a, b) => Math.min(b, Math.max(a, x));
+const fmt1 = x => (Math.round(x * 10) / 10).toString();
+
+const TEMPO = [
+  { steady: true, text: '10–15 min comfortably steady' },
+  { text: '2 × 6 min tempo, 2 min jog' }, { text: '3 × 5 min tempo, 2 min jog' },
+  { text: '2 × 8 min tempo, 2 min jog' }, { text: '3 × 6 min tempo, 2 min jog' },
+  { text: '2 × 10 min tempo, 2 min jog' }, { text: '3 × 8 min tempo, 2 min jog' },
+  { text: '2 × 12 min tempo, 3 min jog' }, { text: '3 × 10 min tempo, 2 min jog' },
+  { text: '20 min continuous tempo' }
+];
+const MP_MILES = [3, 4, 4, 5, 5, 6, 6, 7, 7, 8];
+const WEIGHTS = { quality: 1.15, medium: 1.35, easy: 1.0, prelong: 0.65, recovery: 0.6 };
+const PHASE_NAMES = { 1: 'Stabilize', 2: 'Build durability', 3: 'Marathon-specific', 4: 'Taper' };
+
+/* Input ranges per unit system (distance fields only). */
+const RANGES = {
+  us:     { miles: [12, 45], longrun: [4, 20], peakMiles: [25, 45], peakLong: [12, 20], weight: [70, 550] },
+  metric: { miles: [19, 72], longrun: [6, 32], peakMiles: [40, 72], peakLong: [19, 32], weight: [32, 250] }
+};
+
+/* =============================== unit formatting =============================== */
+function makeUnits(units) {
+  const metric = units === 'metric';
+  return {
+    metric,
+    abbr: metric ? 'km' : 'mi',
+    /* displayed distance number for a mileage value (daily runs) */
+    val: mi => metric ? Math.round(mi * KM_PER_MI) : r05(mi),
+    D: mi => `${fmt1(metric ? Math.round(mi * KM_PER_MI) : r05(mi))} ${metric ? 'km' : 'mi'}`,
+    range: (a, b) => metric ? `${Math.round(a * KM_PER_MI)}–${Math.round(b * KM_PER_MI)} km` : `${a}–${b} mi`,
+    raceLabel: metric ? '42.2 km' : '26.2 mi',
+    /* pace in min/mi -> "m:ss/unit" */
+    pace: minPerMi => fmtPace(metric ? minPerMi / KM_PER_MI : minPerMi) + (metric ? '/km' : '/mi'),
+    paceRange: (a, b) => {
+      const s = x => fmtPace(metric ? x / KM_PER_MI : x);
+      return (s(a) === s(b) ? s(a) : `${s(a)}–${s(b)}`) + (metric ? '/km' : '/mi');
+    }
+  };
+}
+function fmtPace(min) {
+  let m = Math.floor(min), s = Math.round((min - m) * 60);
+  if (s === 60) { m += 1; s = 0; }
+  return `${m}:${String(s).padStart(2, '0')}`;
+}
+function hm(mins) { const h = Math.floor(mins / 60), m = Math.round(mins % 60); return m === 60 ? `${h + 1}:00` : `${h}:${String(m).padStart(2, '0')}`; }
+
+/* =============================== pace model ===============================
+   Race-equivalency via the Daniels/Gilbert oxygen-cost equations.
+   v = velocity in m/min, t = duration in minutes. */
+const vo2At = v => -4.60 + 0.182258 * v + 0.000104 * v * v;
+const pctMax = t => 0.8 + 0.1894393 * Math.exp(-0.012778 * t) + 0.2989558 * Math.exp(-0.1932605 * t);
+const fitnessIndex = (meters, mins) => vo2At(meters / mins) / pctMax(mins);
+const velAt = vo2 => (-0.182258 + Math.sqrt(0.182258 ** 2 + 4 * 0.000104 * (4.60 + vo2))) / (2 * 0.000104);
+const paceFromVel = v => M_PER_MI / v; /* min per mile */
+function predictTime(index, meters) {
+  let lo = meters / 600, hi = meters / 40; /* minutes */
+  for (let i = 0; i < 60; i++) { const mid = (lo + hi) / 2; if (fitnessIndex(meters, mid) > index) lo = mid; else hi = mid; }
+  return (lo + hi) / 2;
+}
+function parseClock(text, meters) {
+  if (!text || !/^\s*\d{1,2}(:\d{1,2}){1,2}\s*$/.test(text)) return null;
+  const p = text.trim().split(':').map(Number);
+  let mins;
+  if (p.length === 3) mins = p[0] * 60 + p[1] + p[2] / 60;
+  else mins = meters >= 21000 ? p[0] * 60 + p[1] : p[0] + p[1] / 60; /* h:mm for half/full, mm:ss otherwise */
+  return mins > 0 ? mins : null;
+}
+function parsePace(text, metric) {
+  if (!text || !/^\s*\d{1,2}:\d{2}\s*$/.test(text)) return null;
+  const [m, s] = text.trim().split(':').map(Number);
+  if (s > 59) return null;
+  let min = m + s / 60;
+  if (metric) min *= KM_PER_MI;              /* convert min/km -> min/mi */
+  return min >= 4 && min <= 25 ? min : null; /* plausible running paces only */
+}
+function computePaces(cfg) {
+  const out = { easy: null, mp: null, tempo: null, steady: null, source: null, mpPred: null };
+  let idx = null;
+  if (cfg.raceMins) { idx = fitnessIndex(cfg.raceDist, cfg.raceMins); out.source = 'race'; }
+  else if (cfg.mpPace) { idx = fitnessIndex(42195, cfg.mpPace * 42195 / M_PER_MI); out.source = 'mp'; }
+  if (idx && idx > 15 && idx < 90) {
+    out.easy = [paceFromVel(velAt(0.70 * idx)), paceFromVel(velAt(0.62 * idx))];
+    out.tempo = paceFromVel(velAt(0.88 * idx));
+    out.mpPred = predictTime(idx, 42195) / (42195 / M_PER_MI);
+    out.mp = [out.mpPred, out.mpPred + 0.25];
+  }
+  if (cfg.mpPace) out.mp = [cfg.mpPace, cfg.mpPace];
+  if (cfg.easyPace) { out.easy = [cfg.easyPace, cfg.easyPace + 0.5]; out.source = out.source || 'easy'; }
+  if (out.mp && out.tempo) out.steady = [out.tempo + (out.mp[0] - out.tempo) * 0.5, out.mp[0]];
+  return out;
+}
+
+/* =============================== weekly day roles =============================== */
+function assignDays(cfg) {
+  const L = cfg.longDay, R = cfg.restDay;
+  const Q = [L - 4, L - 3, L - 5, L - 2].map(mod7).find(d => d !== R && d !== L);
+  let order;
+  if (cfg.days === 4) order = [L - 2, L - 6, L - 5, L - 1, L - 3];
+  else if (cfg.days === 5) order = [L - 6, L - 2, L - 1, L - 5, L - 3];
+  else order = [L - 6, L - 2, L - 1, L - 5, L - 3, L - 4];
+  order = [...new Set(order.map(mod7))].filter(d => d !== R && d !== L && d !== Q);
+  const others = order.slice(0, cfg.days - 2);
+
+  const roles = Array(7).fill('off');
+  roles[R] = 'rest'; roles[L] = 'long'; roles[Q] = 'quality';
+  others.forEach(d => roles[d] = 'easy');
+  const pre = mod7(L - 1);
+  if (roles[pre] === 'easy') roles[pre] = 'prelong';
+  const med = [L - 2, L - 3, L - 5, L - 6, L - 4].map(mod7).find(d => roles[d] === 'easy');
+  if (med !== undefined) roles[med] = 'medium';
+  if (cfg.days === 6) {
+    const post = mod7(L + 1);
+    const rec = roles[post] === 'easy' ? post : roles.findIndex(r => r === 'easy');
+    if (rec >= 0) roles[rec] = 'recovery';
+  }
+
+  /* Strength: pair with easy runs, farthest from the long run; never the day before it. */
+  const distToLong = d => mod7(L - d);
+  const pick = (pool, n) => {
+    pool = pool.slice().sort((a, b) => distToLong(b) - distToLong(a));
+    const chosen = [];
+    for (const d of pool) {
+      if (chosen.length >= n) break;
+      if (chosen.every(c => Math.min(mod7(c - d), mod7(d - c)) > 1)) chosen.push(d);
+    }
+    for (const d of pool) { if (chosen.length >= n) break; if (!chosen.includes(d)) chosen.push(d); }
+    return chosen;
+  };
+  let strengthDays = pick([0,1,2,3,4,5,6].filter(d => ['easy','medium','recovery'].includes(roles[d])), cfg.strength);
+  if (strengthDays.length < cfg.strength) {
+    const extra = pick([0,1,2,3,4,5,6].filter(d => roles[d] === 'off' && d !== pre && !strengthDays.includes(d)), cfg.strength - strengthDays.length);
+    strengthDays = strengthDays.concat(extra);
+  }
+  strengthDays.sort((a, b) => distToLong(b) - distToLong(a));
+  return { roles, Q, strengthDays };
+}
+
+/* =============================== week-by-week progression (all in miles) =============================== */
+function generatePlan(cfg, U) {
+  const warnings = [], notes = [];
+  const race = cfg.goal === 'race';
+  const capM = Math.max(cfg.startMiles, race ? cfg.peakMiles : Math.min(cfg.peakMiles, 35));
+  const capL = race ? cfg.peakLong : Math.min(cfg.peakLong, 16);
+  const W = cfg.weeks;
+  const T = race ? cfg.taper : 0;
+  const P1 = Math.min(3, W);
+  let P2, P3 = 0;
+  if (race) {
+    const avail = W - P1;
+    P3 = Math.min(16, avail);
+    P2 = W - P1 - P3;
+    if (avail < 14) warnings.push(`The marathon-specific block here is ${avail} weeks (including taper); 14–16 weeks is recommended. Consider a longer plan.`);
+  } else {
+    P2 = W - P1;
+    if (cfg.peakMiles > 35.5 || cfg.peakLong > 16.5) notes.push(`Durability mode caps weekly distance at ${U.D(35)} and the long run at ${U.D(16)} — the Phase 2 readiness targets. Choose "Marathon at end" for higher peaks.`);
+  }
+  const buildEnd = W - T;
+  const p3Start = P1 + P2 + 1;
+  const p3Mid = p3Start + Math.floor((buildEnd - p3Start + 1) / 2);
+
+  let M = cfg.startMiles;
+  /* Phase 1 keeps the current long run (up to ~55% of the week); the build keeps it at or below ~50%. */
+  let full = f05(Math.min(cfg.startLong, 0.55 * M));
+  if (U.val(full) < U.val(cfg.startLong)) notes.push(`Early long runs start at ${U.D(full)} rather than ${U.D(cfg.startLong)}: that run is more than half of your usual week. Build weekly distance first.`);
+  let maxM = M, maxL = full, reachedPeak = false, altDown = true;
+  let tempoI = 0, mpI = 0, p3n = 0, lmpI = 0, p3Entry = null;
+  const weeks = [];
+
+  for (let w = 1; w <= W; w++) {
+    const wk = { n: w, cut: false, race: false, longMP: 0 };
+    wk.phase = w > buildEnd ? 4 : (w <= P1 ? 1 : (w <= P1 + P2 ? 2 : 3));
+    wk.phaseStart = w === 1 || weeks[weeks.length - 1].phase !== wk.phase;
+
+    if (w <= buildEnd) {
+      const cut = w > 1 && w % cfg.cutEvery === 0 && !(race && w === buildEnd);
+      wk.cut = cut;
+      if (wk.phase > 1 && !cut) {
+        M = Math.min(capM, M + clamp(M * 0.08, 1.5, 3));
+        const target = Math.min(capL, full + 1);
+        full = Math.max(full, f05(Math.min(target, 0.5 * M)));
+      }
+      let miles = M, long = full;
+      if (wk.phase > 1 && !cut && reachedPeak && full >= capL) {
+        if (altDown) long = r05(capL * 0.85);
+        altDown = !altDown;
+      }
+      if (full >= capL) reachedPeak = true;
+      if (cut) { miles = M * 0.75; long = r05(full * 0.72); }
+      wk.miles = miles; wk.long = long;
+      maxM = Math.max(maxM, M); maxL = Math.max(maxL, full);
+      if (wk.phase === 3 && p3Entry === null) p3Entry = { M, L: full };
+
+      if (wk.phase === 1 || cut) wk.q = { kind: 'strides' };
+      else if (wk.phase === 2) wk.q = { kind: 'tempo', t: TEMPO[Math.min(tempoI++, TEMPO.length - 1)] };
+      else {
+        p3n++;
+        if (p3n % 2 === 1) wk.q = { kind: 'tempo', t: TEMPO[Math.min(tempoI++, TEMPO.length - 1)] };
+        else wk.q = { kind: 'mp', mi: MP_MILES[Math.min(mpI++, MP_MILES.length - 1)], reps: 1 };
+        if (!cut && w >= p3Mid && wk.q.kind === 'tempo' && long >= 12) wk.longMP = Math.min(3 + lmpI++, 6);
+      }
+      wk.strength = (wk.phase === 1 && w <= 2) ? 'light' : (cut ? 'lighter' : 'normal');
+      wk.strengthCount = cfg.strength;
+    } else {
+      const ti = w - buildEnd;
+      if (w === W) {
+        wk.race = true;
+        wk.miles = maxM * 0.38;
+        wk.long = 26.2;
+        wk.q = { kind: 'sharpen' };
+        wk.strengthCount = 0;
+      } else {
+        const mf = T === 3 ? [0.8, 0.65][ti - 1] : 0.72;
+        const lf = T === 3 ? [0.72, 0.55][ti - 1] : 0.62;
+        wk.miles = maxM * mf;
+        wk.long = r05(maxL * lf);
+        wk.q = ti === 1 ? { kind: 'mp', mi: 2, reps: 2 } : { kind: 'tempo', t: { text: '3 × 5 min tempo, 2 min jog' } };
+        wk.strength = 'taper';
+        wk.strengthCount = Math.min(1, cfg.strength);
+      }
+    }
+    weeks.push(wk);
+  }
+
+  if (race && p3Entry && (p3Entry.M < 30 || p3Entry.L < 14)) {
+    warnings.push(`At the start of the marathon-specific phase (Week ${p3Start}) the plan projects about ${U.D(p3Entry.M)}/week and a ${U.D(p3Entry.L)} long run — below the ${U.range(30, 35)} / ${U.range(14, 16)} readiness gate. Add weeks, or expect to repeat Build weeks before moving on.`);
+  }
+  if (U.val(maxL) < U.val(capL)) notes.push(`The long run tops out at ${U.D(maxL)} instead of ${U.D(capL)} because it's held to about half of weekly distance (peak ${U.D(maxM)}). Raise peak weekly distance or accept the shorter peak.`);
+  return { weeks, warnings, notes, P1, P2, P3, T, buildEnd, maxM, maxL, race };
+}
+
+/* =============================== daily detail =============================== */
+function buildWeekDays(wk, layout, cfg, U, paces) {
+  const { roles, Q, strengthDays } = layout;
+  const runDays = [0,1,2,3,4,5,6].filter(d => WEIGHTS[roles[d]]);
+  const nonLong = Math.max(0, wk.miles - (wk.race ? 0 : wk.long));
+  const sumW = runDays.reduce((a, d) => a + WEIGHTS[roles[d]], 0) || 1;
+  const dist = {};
+  runDays.forEach(d => dist[d] = Math.max(2, r05(nonLong * WEIGHTS[roles[d]] / sumW)));
+  if (wk.q.kind === 'tempo' && dist[Q] < 4) dist[Q] = 4;
+  if (wk.q.kind === 'mp' && dist[Q] < wk.q.mi * wk.q.reps + 2) dist[Q] = wk.q.mi * wk.q.reps + 2;
+  const pre = mod7(cfg.longDay - 1);
+  if (wk.race && dist[pre] !== undefined) dist[pre] = 2;
+
+  const easyP = paces.easy ? U.paceRange(paces.easy[0], paces.easy[1]) : '';
+  const easyMid = paces.easy ? (paces.easy[0] + paces.easy[1]) / 2 : null;
+  const mpP = paces.mp ? U.paceRange(paces.mp[0], paces.mp[1]) : '';
+  const sDays = strengthDays.slice(0, wk.strengthCount);
+  const cells = [];
+  let total = 0;
+
+  for (let d = 0; d < 7; d++) {
+    const role = roles[d];
+    let cls = 'easy', t = '', det = '', pace = '', runMi = 0;
+    if (role === 'long') {
+      if (wk.race) { cls = 'race'; t = `RACE · ${U.raceLabel}`; det = 'Start controlled; fuel & fluids as rehearsed.'; pace = mpP ? `Plan ~${mpP}; slower if hot or hilly` : ''; }
+      else {
+        cls = 'long'; runMi = wk.long; t = `Long · ${U.D(wk.long)}`;
+        const parts = [wk.phase === 4 ? 'Easy; race-day fuel rehearsal' : 'Easy effort; shorten if tired'];
+        if (wk.longMP) parts.push(`last ${U.D(wk.longMP)} @ marathon effort if recovered`);
+        const est = easyMid ? wk.long * easyMid : null;
+        if (est) parts.push(`~${hm(est)}`);
+        if ((est && est >= 75) || (!est && wk.long >= 9)) parts.push('fuel 30–60 g carbs/hr');
+        det = parts.join(' · ');
+        const pp = [];
+        if (easyP) pp.push(`Easy ${easyP}`);
+        if (wk.longMP && mpP) pp.push(`MP ${mpP}`);
+        pace = pp.join(' · ');
+      }
+    } else if (role === 'rest') { cls = 'rest'; t = 'Rest'; det = 'Full rest — keep it.'; }
+    else if (role === 'off') { cls = 'off'; t = 'Off'; det = 'Rest or easy cross-training.'; }
+    else {
+      runMi = dist[d];
+      if (role === 'quality') {
+        if (wk.q.kind === 'strides') { t = `Easy · ${U.D(runMi)}`; det = '+ 4–6 × 15–20 s strides if familiar & pain-free'; pace = easyP; }
+        else if (wk.q.kind === 'tempo') {
+          cls = 'quality'; t = `Tempo · ${U.D(runMi)}`; det = `${wk.q.t.text}; rest easy`;
+          if (wk.q.t.steady && paces.steady) pace = `Steady ${U.paceRange(paces.steady[0], paces.steady[1])}`;
+          else if (paces.tempo) pace = `Tempo ~${U.pace(paces.tempo)}`;
+        } else if (wk.q.kind === 'mp') {
+          cls = 'quality'; t = `Marathon effort · ${U.D(runMi)}`;
+          det = `${wk.q.reps > 1 ? wk.q.reps + ' × ' : ''}${U.D(wk.q.mi)} @ marathon effort; rest easy`;
+          pace = mpP ? `MP ${mpP}` : '';
+        } else { cls = 'quality'; t = `Easy · ${U.D(runMi)}`; det = '3 × 3 min @ marathon effort, early in the week'; pace = mpP ? `MP ${mpP}` : ''; }
+      } else if (role === 'prelong') {
+        if (wk.race) { t = `Shakeout · ${U.D(2)}`; det = 'Optional — or rest. Lay out race gear.'; }
+        else { t = `Easy · ${U.D(runMi)}`; det = 'Short & gentle; no strength or speed.'; pace = easyP; }
+      } else if (role === 'medium') { t = `Easy · ${U.D(runMi)}`; det = 'Steady-easy, conversational.'; pace = easyP; }
+      else if (role === 'recovery') { t = `Recovery · ${U.D(runMi)}`; det = 'Very easy; skip if legs are heavy.'; pace = paces.easy ? `Easy ${U.pace(paces.easy[1])} or slower` : ''; }
+      else { t = `Easy · ${U.D(runMi)}`; det = 'Conversational.'; pace = easyP; }
+    }
+    if (pace && /^\d/.test(pace)) pace = 'Easy ' + pace;
+    let s = '';
+    const si = sDays.indexOf(d);
+    if (si >= 0) {
+      const name = si === 0 ? 'Strength A' : 'Strength B';
+      const dose = wk.strength === 'light' || wk.strength === 'taper' ? 'light, 1–2 sets' : wk.strength === 'lighter' ? 'lighter, 1 set each' : '20–30 min, 2 sets';
+      s = `${name} · ${dose}`;
+      if (role === 'off') { t = 'Strength (no run)'; det = 'Or easy cross-training.'; }
+    }
+    total += runMi ? U.val(runMi) : 0;
+    cells.push({ cls, t, det, pace, s, nobox: role === 'off' && !s });
+  }
+  return { cells, total };
+}
+
+/* =============================== form state =============================== */
+const FIELDS = {
+  units: { kind: 'radio', def: 'us' },
+  miles: { kind: 'num', def: '25' }, longrun: { kind: 'num', def: '13' }, weight: { kind: 'num', def: '' },
+  goal: { kind: 'radio', def: 'race' }, weeks: { kind: 'num', def: '22' },
+  peakMiles: { kind: 'num', def: '38' }, peakLong: { kind: 'num', def: '18' },
+  cutEvery: { kind: 'radio', def: '4' }, taper: { kind: 'radio', def: '3' },
+  days: { kind: 'radio', def: '5' }, longDay: { kind: 'radio', def: '5' }, restDay: { kind: 'select', def: '6' },
+  strength: { kind: 'radio', def: '2' },
+  raceDist: { kind: 'select', def: '21097.5' }, raceTime: { kind: 'text', def: '' },
+  easyPace: { kind: 'text', def: '' }, mpPace: { kind: 'text', def: '' },
+  weekStart: { kind: 'radio', def: 'sun' }, paper: { kind: 'radio', def: 'letter' }, orientation: { kind: 'radio', def: 'landscape' },
+  includeGuide: { kind: 'check', def: true }
+};
+const STORE_KEY = 'marathonCalendar.v2';
+let form, currentUnits = 'us';
+
+function getField(name) {
+  const f = FIELDS[name], el = form.elements[name];
+  if (f.kind === 'check') return el.checked;
+  return el.value;
+}
+function setField(name, value) {
+  const f = FIELDS[name], el = form.elements[name];
+  if (!el) return;
+  if (f.kind === 'check') { el.checked = value === true || value === 'true' || value === '1'; return; }
+  if (f.kind === 'radio' || f.kind === 'select') {
+    /* only accept values that exist as options (protects against bad URLs/storage) */
+    const opts = f.kind === 'radio' ? [...el].map(r => r.value) : [...el.options].map(o => o.value);
+    if (opts.includes(String(value))) el.value = String(value);
+    return;
+  }
+  if (f.kind === 'num') {
+    const n = Number(value);
+    if (value === '' || !Number.isFinite(n)) { el.value = ''; return; }
+    el.value = String(clamp(n, Number(el.min) || -Infinity, Number(el.max) || Infinity)); /* keep links/storage within field limits */
+    return;
+  }
+  el.value = String(value).slice(0, 12);
+}
+function snapshot() { const o = {}; for (const k in FIELDS) o[k] = getField(k); return o; }
+
+function applyUnitLabels(units) {
+  const r = RANGES[units];
+  for (const k of ['miles', 'longrun', 'peakMiles', 'peakLong', 'weight']) {
+    form.elements[k].min = r[k][0]; form.elements[k].max = r[k][1];
+  }
+  const metric = units === 'metric';
+  document.querySelectorAll('[data-u="dist"]').forEach(e => e.textContent = metric ? 'km' : 'mi');
+  document.querySelectorAll('[data-u="weight"]').forEach(e => e.textContent = metric ? 'kg' : 'lb');
+  document.querySelectorAll('[data-u="pace"]').forEach(e => e.textContent = metric ? 'min/km' : 'min/mi');
+  form.elements.easyPace.placeholder = metric ? '6:22' : '10:15';
+  form.elements.mpPace.placeholder = metric ? '5:45' : '9:15';
+  const unitOf = k => k === 'weight' ? (metric ? 'kg' : 'lb') : (metric ? 'km' : 'mi');
+  document.querySelectorAll('[data-range]').forEach(e => {
+    const k = e.dataset.range;
+    e.textContent = `Enter a number from ${r[k][0]} to ${r[k][1]} ${unitOf(k)}.`;
+  });
+  const U = makeUnits(units);
+  document.querySelector('[data-hint="peakMiles"]').textContent = `Typical for this plan: ${U.range(35, 42)}. Allowed: ${r.peakMiles[0]}–${r.peakMiles[1]}.`;
+  document.querySelector('[data-hint="peakLong"]').textContent = `Usually ${U.range(16, 20)}. Treat it as a ceiling, not a requirement.`;
+}
+function convertFields(from, to) {
+  if (from === to) return;
+  const toMetric = to === 'metric';
+  for (const k of ['miles', 'longrun', 'peakMiles', 'peakLong']) {
+    const v = Number(form.elements[k].value);
+    if (form.elements[k].value !== '' && Number.isFinite(v)) form.elements[k].value = Math.round(toMetric ? v * KM_PER_MI : v / KM_PER_MI);
+  }
+  const w = Number(form.elements.weight.value);
+  if (form.elements.weight.value !== '' && Number.isFinite(w)) form.elements.weight.value = Math.round(toMetric ? w / LB_PER_KG : w * LB_PER_KG);
+  for (const k of ['easyPace', 'mpPace']) {
+    const p = parsePace(form.elements[k].value, from === 'metric');
+    if (p) form.elements[k].value = fmtPace(toMetric ? p / KM_PER_MI : p);
+  }
+}
+
+function readCfg() {
+  const s = snapshot();
+  const metric = s.units === 'metric';
+  const r = RANGES[s.units];
+  const num = (k, fb) => { const v = Number(s[k]); return clamp(s[k] !== '' && Number.isFinite(v) && v > 0 ? v : fb, r[k][0], r[k][1]); };
+  const toMi = x => metric ? x / KM_PER_MI : x;
+  const fbs = metric ? { miles: 40, longrun: 21, peakMiles: 61, peakLong: 29 } : { miles: 25, longrun: 13, peakMiles: 38, peakLong: 18 };
+  const cfg = {
+    units: s.units,
+    startMiles: toMi(num('miles', fbs.miles)),
+    startLong: toMi(num('longrun', fbs.longrun)),
+    peakMiles: toMi(num('peakMiles', fbs.peakMiles)),
+    peakLong: toMi(num('peakLong', fbs.peakLong)),
+    weightKg: (() => { const v = Number(s.weight); if (!s.weight || !Number.isFinite(v) || v <= 0) return 0; const kg = metric ? v : v / LB_PER_KG; return kg >= 30 && kg <= 250 ? kg : 0; })(),
+    goal: s.goal,
+    weeks: Math.round(clamp(Number(s.weeks) || 22, 6, 30)),
+    cutEvery: +s.cutEvery, taper: +s.taper, days: +s.days,
+    longDay: +s.longDay, restDay: +s.restDay, strength: +s.strength,
+    raceDist: +s.raceDist,
+    weekStart: s.weekStart, paper: s.paper, orientation: s.orientation === 'portrait' ? 'portrait' : 'landscape', includeGuide: s.includeGuide
+  };
+  cfg.raceMins = parseClock(s.raceTime, cfg.raceDist);
+  cfg.easyPace = parsePace(s.easyPace, metric);
+  cfg.mpPace = parsePace(s.mpPace, metric);
+  if (cfg.goal === 'race' && cfg.weeks < 10) { cfg.weeks = 10; cfg.weeksForced = true; }
+  if (cfg.restDay === cfg.longDay) { cfg.restDay = mod7(cfg.longDay + 1); setField('restDay', cfg.restDay); cfg.restMoved = true; }
+  [...form.elements.restDay.options].forEach(o => { o.disabled = +o.value === cfg.longDay; });
+  return cfg;
+}
+
+/* =============================== rendering =============================== */
+function render() {
+  const cfg = readCfg();
+  const U = makeUnits(cfg.units);
+  save();
+  document.getElementById('pageStyle').textContent = `@page { size: ${cfg.paper === 'A4' ? 'A4' : 'letter'} ${cfg.orientation}; margin: ${cfg.orientation === 'portrait' ? '0.35in' : '0.4in'}; }`;
+  document.body.classList.toggle('no-guide', !cfg.includeGuide);
+  document.body.classList.toggle('print-portrait', cfg.orientation === 'portrait');
+  document.getElementById('taperField').hidden = cfg.goal !== 'race';
+  document.getElementById('goalHint').textContent = cfg.goal === 'race'
+    ? 'Builds to a marathon-specific block, then a taper and race week at the end.'
+    : `No race: builds to about ${makeUnits(cfg.units).D(35)}/week and ${makeUnits(cfg.units).D(16)} long runs. A good step before choosing a race.`;
+  document.getElementById('weeksHint').textContent = cfg.goal === 'race'
+    ? `Count the weeks until race day: Week ${cfg.weeks} is race week. 20–24 weeks suits most runners starting from a half-marathon base; at least 10 is required.`
+    : 'How many weeks to build for. You can repeat weeks if recovery is poor.';
+
+  const plan = generatePlan(cfg, U);
+  const layout = assignDays(cfg);
+  const paces = computePaces(cfg);
+  const cols = cfg.weekStart === 'sun' ? [6,0,1,2,3,4,5] : [0,1,2,3,4,5,6];
+
+  document.getElementById('calHead').innerHTML =
+    `<tr><th scope="col">Week</th>${cols.map(d => `<th scope="col">${DAY_NAMES[d]}</th>`).join('')}</tr>`;
+
+  const gate = {
+    1: 'Hold your current base. Run mostly easy; strides only if familiar.',
+    2: 'Advance only if recent weeks felt consistent, sleep/appetite/mood are normal, no persistent pain, and long runs recover in 24–48 h. Otherwise repeat the last week.',
+    3: `Start only if ${U.range(30, 35)}/week feels sustainable and ${U.range(14, 16)} long runs are comfortable. If not, repeat Build weeks and move the race.`,
+    4: 'Cut volume, keep short familiar efforts. Don\'t cram missed workouts.'
+  };
+
+  let rows = '';
+  for (const wk of plan.weeks) {
+    if (wk.phaseStart) rows += `<tr class="phase-row"><td colspan="8"><strong>Phase ${wk.phase} · ${PHASE_NAMES[wk.phase]}</strong>${gate[wk.phase]}</td></tr>`;
+    const { cells, total } = buildWeekDays(wk, layout, cfg, U, paces);
+    const tags = [];
+    if (wk.cut) tags.push('<span class="tag cut">Cutback</span>');
+    if (plan.race && !wk.race && wk.phase !== 4 && wk.long >= plan.maxL - 0.01) tags.push('<span class="tag peak">Peak long</span>');
+    if (wk.race) tags.push('<span class="tag race">Race week</span>');
+    const totTxt = wk.race ? `${fmt1(total)} ${U.abbr} + race` : `${fmt1(total)} ${U.abbr}`;
+    const totMi = U.metric ? total / KM_PER_MI : total;
+    const kcal = cfg.weightKg && !wk.race ? `<span class="ph">≈${Math.round(cfg.weightKg * KM_PER_MI * totMi).toLocaleString()} kcal running</span>` : '';
+    rows += `<tr class="week"><th scope="row" class="wkcell"><div class="n">Week ${wk.n}</div><div class="ph">${PHASE_NAMES[wk.phase]}</div><div class="tot">${totTxt}</div>${tags.join('')}${kcal}</th>` +
+      cols.map(d => {
+        const c = cells[d];
+        return `<td class="day ${c.cls}${c.nobox ? ' nobox' : ''}"><span class="dlabel" aria-hidden="true">${DAY_SHORT[d]}</span><div><div class="t">${c.t}</div><div class="d">${c.det}</div>${c.pace ? `<div class="p">${c.pace}</div>` : ''}${c.s ? `<div class="s">${c.s}</div>` : ''}</div><span class="box" aria-hidden="true"></span></td>`;
+      }).join('') + '</tr>';
+  }
+  document.getElementById('calBody').innerHTML = rows;
+  document.getElementById('calFoot').textContent =
+    `Easy = full sentences, ~3–4/10 effort; follow effort over pace${paces.easy || paces.mp ? ' — paces are guides, not targets' : ''}. Don't make up missed runs. Hold or repeat a week if sleep, appetite, mood, or recovery slip. Stop and get assessed for bone pain, swelling, limping, or pain that worsens as you run.`;
+
+  /* Summary */
+  const ranges = [];
+  let start = 1;
+  const span = (n, label) => { if (n > 0) { ranges.push(`Weeks ${start}${n > 1 ? '–' + (start + n - 1) : ''}: ${label}`); start += n; } };
+  span(plan.P1, 'Stabilize');
+  span(plan.P2, 'Build durability');
+  if (plan.race) { span(plan.P3 - plan.T, 'Marathon-specific'); span(plan.T, 'Taper & race'); }
+  const strengthTxt = cfg.strength ? `${cfg.strength} strength session${cfg.strength > 1 ? 's' : ''}/week` : 'no strength';
+
+  const paceItems = [];
+  if (paces.easy) paceItems.push(`Easy & long ${U.paceRange(paces.easy[0], paces.easy[1])}`);
+  if (paces.mp) paceItems.push(`Marathon effort ${U.paceRange(paces.mp[0], paces.mp[1])}`);
+  if (paces.tempo) paceItems.push(`Tempo ~${U.pace(paces.tempo)}`);
+  let paceLine = '';
+  if (paceItems.length) {
+    const src = paces.source === 'race' ? 'from your recent race' : paces.source === 'mp' ? 'from your goal marathon pace' : 'from your easy pace';
+    const pred = paces.mpPred && paces.source === 'race' ? ` Equivalent marathon ≈ ${hm(paces.mpPred * 42195 / M_PER_MI)} — likely optimistic for a first marathon; start at the slower end.` : '';
+    paceLine = `<li><strong>Suggested paces</strong> (${src}): ${paceItems.join(' · ')}.${pred}</li>`;
+  }
+  const warns = plan.warnings.slice();
+  if (cfg.weeksForced) warns.push('A marathon plan needs at least 10 weeks, so this calendar uses 10. Increase the plan length, or choose "Build durability."');
+  if (cfg.restMoved) warns.push(`Your rest day can't be the long-run day, so it moved to ${DAY_NAMES[cfg.restDay]}.`);
+  if (cfg.peakMiles < cfg.startMiles - 0.1) warns.push(`Peak weekly distance is lower than your usual week, so the plan holds you at about ${U.D(cfg.startMiles)}. Raise the peak if you want the plan to build.`);
+  if (cfg.peakLong < cfg.startLong - 0.1) warns.push(`Peak long run (${U.D(cfg.peakLong)}) is shorter than your current long run (${U.D(cfg.startLong)}). The plan won't push it past your current distance; check that both numbers are right.`);
+  if (cfg.mpPace && paces.source === 'race' && cfg.raceMins) {
+    const idx = fitnessIndex(cfg.raceDist, cfg.raceMins);
+    const pred = predictTime(idx, 42195) / (42195 / M_PER_MI);
+    if (cfg.mpPace < pred - 0.05) warns.push(`Your goal marathon pace (${U.pace(cfg.mpPace)}) is faster than your recent race predicts (${U.pace(pred)}). Consider a more conservative goal, or confirm it with a new race result.`);
+  }
+  const rawPaceErr = ['raceTime', 'easyPace', 'mpPace'].some(k => form.elements[k].value.trim() && !form.elements[k].checkValidity());
+  if (rawPaceErr) warns.push('One of the pacing fields isn\'t in a recognized format, so it\'s being ignored.');
+
+  document.getElementById('summary').innerHTML =
+    `<strong>${cfg.weeks}-week plan · ${plan.race ? 'marathon in Week ' + cfg.weeks : 'durability build (no race)'}</strong>
+     <ul>
+       <li>Start ~${U.D(cfg.startMiles)}/week with a ${U.D(cfg.startLong)} long run · Peak ~${U.D(plan.maxM)}/week with a ${U.D(plan.maxL)} long run</li>
+       <li>${cfg.days} running days · long run ${DAY_NAMES[cfg.longDay]} · rest ${DAY_NAMES[cfg.restDay]} · ${strengthTxt} · cutback every ${cfg.cutEvery === 3 ? '3rd' : '4th'} week</li>
+       <li>${ranges.join(' · ')}</li>
+       ${paceLine}
+       ${plan.notes.map(n => `<li>${n}</li>`).join('')}
+     </ul>`;
+  document.getElementById('warnings').innerHTML = warns.map(w => `<p class="warn">${w}</p>`).join('');
+  if (userChange) announce(`Calendar updated: ${cfg.weeks} weeks, peaking at ${U.D(plan.maxM)} per week.`);
+  userChange = false;
+}
+
+/* Polite, debounced screen-reader announcement so typing isn't noisy. */
+let announceTimer;
+let userChange = false;
+function announce(msg) {
+  clearTimeout(announceTimer);
+  announceTimer = setTimeout(() => {
+    const el = document.getElementById('liveStatus');
+    el.textContent = '✓ ' + msg + ' ';
+    const a = document.createElement('a');
+    a.href = '#planHeading'; a.textContent = 'View calendar';
+    a.addEventListener('click', e => { e.preventDefault(); const h = document.getElementById('planHeading'); h.scrollIntoView({ block: 'start' }); h.focus({ preventScroll: true }); });
+    el.append(a);
+  }, 700);
+}
+
+/* =============================== persistence, sharing, actions =============================== */
+function save() { try { localStorage.setItem(STORE_KEY, JSON.stringify(snapshot())); } catch (e) { /* storage unavailable */ } }
+function applyObject(o) {
+  if (o.units !== undefined) setField('units', o.units);
+  currentUnits = getField('units');
+  applyUnitLabels(currentUnits);
+  for (const k in FIELDS) if (k !== 'units' && o[k] !== undefined && o[k] !== null) setField(k, o[k]);
+}
+function loadInitial() {
+  const params = new URLSearchParams(location.search);
+  const fromUrl = {};
+  for (const k in FIELDS) if (params.has(k)) fromUrl[k] = params.get(k);
+  if (Object.keys(fromUrl).length) { applyObject(fromUrl); return; }
+  try { const o = JSON.parse(localStorage.getItem(STORE_KEY) || 'null'); if (o && typeof o === 'object') applyObject(o); } catch (e) { /* ignore */ }
+}
+function shareUrl() {
+  const s = snapshot(), p = new URLSearchParams();
+  for (const k in FIELDS) {
+    const def = FIELDS[k].def, v = s[k];
+    if (String(v) !== String(def) || k === 'units') p.set(k, String(v));
+  }
+  return `${location.origin === 'null' ? '' : location.origin}${location.pathname}?${p.toString()}`;
+}
+async function copyLink() {
+  const url = shareUrl(), status = document.getElementById('copyStatus');
+  try {
+    document.getElementById('undoBtn').hidden = true;
+    await navigator.clipboard.writeText(url);
+    status.textContent = 'Link copied.';
+  } catch (e) {
+    history.replaceState(null, '', url);
+    status.textContent = 'Link is now in your address bar — copy it from there.';
+  }
+  setTimeout(() => { status.textContent = ''; }, 5000);
+}
+let undoSnapshot = null, undoTimer;
+function resetPlan() {
+  undoSnapshot = snapshot();
+  applyObject(Object.fromEntries(Object.entries(FIELDS).map(([k, f]) => [k, f.def])));
+  if (location.search) history.replaceState(null, '', location.pathname);
+  userChange = true;
+  render();
+  showUndo();
+}
+function showUndo() {
+  const status = document.getElementById('copyStatus'), undo = document.getElementById('undoBtn');
+  status.textContent = 'Settings reset to defaults.';
+  undo.hidden = false;
+  clearTimeout(undoTimer);
+  undoTimer = setTimeout(() => { undo.hidden = true; status.textContent = ''; undoSnapshot = null; }, 12000);
+}
+function undoReset() {
+  if (!undoSnapshot) return;
+  applyObject(undoSnapshot);
+  undoSnapshot = null;
+  document.getElementById('undoBtn').hidden = true;
+  document.getElementById('copyStatus').textContent = 'Your settings are back.';
+  clearTimeout(undoTimer);
+  undoTimer = setTimeout(() => { document.getElementById('copyStatus').textContent = ''; }, 5000);
+  userChange = true;
+  render();
+}
+
+/* =============================== toggletips ===============================
+   Native popover (light-dismiss, Esc, top layer) positioned next to its button with a
+   small script, since CSS anchor positioning isn't widely supported yet. */
+function initTips() {
+  const supported = 'popover' in HTMLElement.prototype;
+  const tips = [...document.querySelectorAll('button.tip[popovertarget]')];
+  const place = (btn, box) => {
+    const r = btn.getBoundingClientRect(), gap = 8, vw = document.documentElement.clientWidth, vh = window.innerHeight;
+    const w = box.offsetWidth, h = box.offsetHeight;
+    let left = Math.min(Math.max(12, r.left + r.width / 2 - 24), vw - w - 12);
+    let top = r.bottom + gap;
+    if (top + h > vh - 12 && r.top - gap - h > 12) top = r.top - gap - h;
+    box.style.left = `${Math.max(12, left)}px`; box.style.top = `${Math.max(12, top)}px`;
+  };
+  let openPair = null;
+  tips.forEach(btn => {
+    const box = document.getElementById(btn.getAttribute('popovertarget'));
+    if (!box) return;
+    btn.setAttribute('aria-expanded', 'false');
+    if (supported) {
+      box.addEventListener('toggle', e => {
+        const open = e.newState === 'open';
+        btn.setAttribute('aria-expanded', String(open));
+        if (open) { place(btn, box); openPair = [btn, box]; } else if (openPair && openPair[1] === box) openPair = null;
+      });
+    } else {
+      /* Fallback for browsers without the Popover API: simple click toggle, Esc to close. */
+      btn.removeAttribute('popovertarget');
+      btn.setAttribute('aria-controls', box.id);
+      btn.addEventListener('click', () => {
+        const open = !box.classList.contains('is-open');
+        document.querySelectorAll('.tipbox.is-open').forEach(b => b.classList.remove('is-open'));
+        tips.forEach(t => t.setAttribute('aria-expanded', 'false'));
+        box.classList.toggle('is-open', open);
+        btn.setAttribute('aria-expanded', String(open));
+        if (open) { place(btn, box); openPair = [btn, box]; }
+      });
+    }
+  });
+  const reflow = () => { if (openPair) place(openPair[0], openPair[1]); };
+  window.addEventListener('scroll', reflow, { passive: true });
+  window.addEventListener('resize', reflow);
+  if (!supported) document.addEventListener('keydown', e => {
+    if (e.key === 'Escape' && openPair) { openPair[1].classList.remove('is-open'); openPair[0].setAttribute('aria-expanded', 'false'); openPair[0].focus(); openPair = null; }
+  });
+}
+
+let renderQueued = false;
+function queueRender() { userChange = true; if (renderQueued) return; renderQueued = true; requestAnimationFrame(() => { renderQueued = false; render(); }); }
+
+function init() {
+  form = document.getElementById('planForm');
+  loadInitial();
+  currentUnits = getField('units');
+  applyUnitLabels(currentUnits);
+  form.addEventListener('submit', e => e.preventDefault());
+  form.addEventListener('input', queueRender);
+  form.addEventListener('change', e => {
+    if (e.target.name === 'units') {
+      const next = getField('units');
+      convertFields(currentUnits, next);
+      currentUnits = next;
+      applyUnitLabels(next);
+    }
+    queueRender();
+  });
+  document.getElementById('printBtn').addEventListener('click', () => { render(); window.print(); });
+  document.getElementById('copyBtn').addEventListener('click', copyLink);
+  document.getElementById('resetBtn').addEventListener('click', resetPlan);
+  document.getElementById('undoBtn').addEventListener('click', undoReset);
+  initTips();
+  if (form.elements.raceTime.value || form.elements.easyPace.value || form.elements.mpPace.value) document.getElementById('paceDetails').open = true;
+  render();
+}
+
+if (typeof document !== 'undefined' && document.getElementById('planForm')) init();
+</script>
+</body>
+</html>
