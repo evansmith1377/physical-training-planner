@@ -300,9 +300,8 @@ def test_high_mileage_runners_are_supported(make_page, query, peak):
     ("?days=6&miles=99&longrun=20&peakMiles=99&peakLong=20", "Lower peak weekly distance"),
 ])
 def test_weekday_longer_than_long_run_warns(make_page, query, advice):
-    page = make_page(query)
-    assert "Some weekday runs are longer than that week's long run" in page.inner_text("#warnings")
-    assert advice in page.inner_text("#warnings")
+    warnings = make_page(query).inner_text("#warnings")
+    assert "Some weekday runs are longer than that week's long run" in warnings and advice in warnings
 
 
 def test_suggested_paces(page):

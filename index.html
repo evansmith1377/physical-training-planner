@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="color-scheme" content="light dark">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-XMAwel6xRocPgVmbin6BAHhmCZfEFagMHZBUEzQ/AuI='; style-src 'unsafe-inline'; img-src 'self' data:; base-uri 'none'; form-action 'none'; object-src 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-sfcaXrWeqqJYYv4MOzm3wuXej/9CaB0ngKuX0lPAwZU='; style-src 'unsafe-inline'; img-src 'self' data:; base-uri 'none'; form-action 'none'; object-src 'none'">
 <meta name="description" content="Free printable training calendar for the marathon or half marathon. Enter your current mileage to get a week-by-week, readiness-based plan with optional pace guidance and calendar export.">
 <link rel="canonical" href="https://evansmith1377.github.io/physical-training-planner/">
 <meta name="theme-color" content="#f3f6f8" media="(prefers-color-scheme: light)">
@@ -1016,7 +1016,8 @@ function buildWeekDays(wk, layout, cfg, U, paces, G) {
     total += runMi ? U.val(runMi) : 0;
     cells.push({ cls, t, det, pace, s, workout: role !== 'rest' && !(role === 'off' && !s) });
   }
-  return { cells, total, maxDay: Math.max(0, ...Object.values(dist)) };
+  /* High volume on few days (or a short long run) can make a weekday run longer than the long run. */
+  return { cells, total, longWeekday: !wk.race && Math.max(0, ...Object.values(dist)) > wk.long };
 }
 
 /* Everything the calendar, summary and .ics export need, from one config. */
@@ -1040,8 +1041,7 @@ function computeCalendar(cfg) {
   if (weeksAway !== null && weeksAway < 1) anchorWarn = 'That race date has already passed. Pick a future date, or clear it to use week numbers only.';
   else if (weeksAway !== null && weeksAway < G.minWeeks) anchorWarn = `Your race is only ${weeksAway} week${weeksAway > 1 ? 's' : ''} away, shorter than the ${G.minWeeks}-week minimum for a ${G.name} plan. Consider a later race.`;
   const noSharpen = raceLayout.Q === -1;
-  /* High volume on few days (or a short long run) can make a weekday run longer than the long run. */
-  const longWeekday = weeks.some(({ wk, maxDay }) => !wk.race && maxDay > wk.long);
+  const longWeekday = weeks.some(w => w.longWeekday);
   return { cfg, U, G, plan, paces, ws, cols, week1, raceDay, dateOf, weeks, weeksAway, anchorWarn, noSharpen, longWeekday };
 }
 const phaseName = (phase, G) => phase === 3 && G.phase3 ? G.phase3 : PHASE_NAMES[phase];
@@ -1347,7 +1347,10 @@ function renderSummary(cal) {
   warns.push(...notices);
   if (cfg.restMoved) warns.push(`Your rest day can't be the long-run day, so it moved to ${DAY_NAMES[cfg.restDay]}.`);
   if (cfg.peakMiles < cfg.startMiles - 0.1) warns.push(`Peak weekly distance is lower than your usual week, so the plan holds you at about ${U.D(cfg.startMiles)}. Raise the peak if you want the plan to build.`);
-  if (cal.longWeekday) warns.push(`Some weekday runs are longer than that week's long run. ${cfg.days < 6 ? 'Add a running day or lower' : 'Lower'} peak weekly distance, or check your current long run.`);
+  if (cal.longWeekday) {
+    const fix = cfg.days < 6 ? 'Add a running day or lower peak weekly distance' : 'Lower peak weekly distance';
+    warns.push(`Some weekday runs are longer than that week's long run. ${fix}, or check your current long run.`);
+  }
   if (cfg.peakLong < cfg.startLong - 0.1) warns.push(`Peak long run (${U.D(cfg.peakLong)}) is shorter than your current long run (${U.D(cfg.startLong)}). The plan won't push it past your current distance; check that both numbers are right.`);
   if (cfg.mpPace && paces.source === 'race' && cfg.raceMins && G.race) {
     const pred = predictPace(fitnessIndex(cfg.raceDist, cfg.raceMins), G.meters);
