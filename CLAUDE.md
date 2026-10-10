@@ -4,27 +4,38 @@ Guidance for AI assistants and contributors working in this repo.
 
 ## Project
 
-A static, single-file marathon training planner: `index.html` holds all HTML, CSS, and JS. It is meant for public hosting (for example, GitHub Pages). See README.md for features and the plan rules.
+Physical Training Planner: a static marathon and half-marathon planner hosted on GitHub Pages. `index.html` holds all HTML, CSS, and JS; `assets/` holds the link-preview image. See README.md for features and the plan rules.
+
+```
+index.html              the whole app
+assets/og-image.png     link-preview image (deployed)
+docs/                   README screenshots (not deployed)
+scripts/csp_hash.py     keeps the CSP script hash in sync
+scripts/screenshots.py  regenerates og-image and screenshots
+tests/                  pytest + Playwright suite
+.github/workflows/      ci.yml (PRs), deploy.yml (main → Pages)
+```
 
 ## Hard constraints
 
-- **Single file, zero dependencies.** No build step, frameworks, CDNs, external fonts, or polyfills loaded from other origins. The page must make no network requests; the footer promises this to users.
-- **Never put raw user input into `innerHTML`.** Settings can arrive through the page address (`?miles=…`), so treat every field as untrusted. Parse text to numbers or enums first (`parsePace`, `parseClock`, `setField` option checks) and render only formatted values.
-- **Internal units are fixed:** miles, kg, and minutes per mile. Convert only at the edges: `readCfg` on the way in, `makeUnits()` (`U.D`, `U.pace`, …) on the way out. Daily distances round to 0.5 mi or whole km. Weekly totals are the sum of the displayed values.
+- **No dependencies or network requests in the page.** No frameworks, CDNs, external fonts, analytics, or polyfills from other origins. The CSP `<meta>` enforces this (`default-src 'none'`), and the footer promises it to users.
+- **CSP hash.** The inline script is allowed by its SHA-256 hash. After any edit inside `<script>`, run `python scripts/csp_hash.py`, or the page breaks and CI fails. Don't add inline event handlers or a second `<script>`.
+- **Never put raw user input into `innerHTML`.** Settings can arrive through the page address (`?miles=…`), so treat every field as untrusted. Parse to numbers, dates or known options first (`setField`, `parsePace`, `parseClock`, `parseISODate`) and render only formatted values.
+- **Internal units are fixed:** miles, kg, and minutes per mile. Convert only at the edges: `readCfg` on the way in, `makeUnits()` (`U.D`, `U.pace`, …) on the way out. Daily distances round to 0.5 mi or whole km, and weekly totals are the sum of the displayed values (a test checks this).
 - **Medical-safety tone.** Effort comes before pace, and the page never prescribes calorie targets. Warnings must be visible; never silently change a visitor's input.
 
 ## Code map (inside the `<script>`)
 
-1. Constants and helpers, then `makeUnits`, which handles all display formatting.
-2. Pace model: Daniels/Gilbert equations; `computePaces(cfg)`.
-3. `assignDays(cfg)`: assigns each weekday a role (long, quality, easy, medium, prelong, recovery, rest, off) and picks the strength days.
-4. `generatePlan(cfg, U)`: week-by-week progression, phases, warnings and notes.
-5. `buildWeekDays(...)`: the text for each day cell.
-6. Form state: `FIELDS` (field name → kind and default), `readCfg`, unit switching, `localStorage` (`marathonCalendar.v2`), and links that carry settings in the page address.
-7. `render()`: the calendar, summary, warnings, dynamic hints and the status message.
-8. Toggletips (`initTips`): native `popover` positioned by script, with a click fallback when the Popover API is missing.
+1. Constants and helpers, then `GOALS` (everything that differs between marathon, half, and durability) and `RANGES`.
+2. `makeUnits` (all display formatting) and date helpers (local dates; Monday = 0 to match `DAY_NAMES`).
+3. Pace model: Daniels/Gilbert equations; `computePaces(cfg, G)`.
+4. `assignDays(cfg)` gives each weekday a role (long, quality, easy, medium, prelong, recovery, rest, off) and picks strength days. `moveRaceDay` adjusts race week when the race date isn't the long-run day.
+5. `generatePlan(cfg, U, G)`: week-by-week progression, phases, warnings and notes.
+6. `buildWeekDays(...)`: the text for each day cell. `computeCalendar(cfg)` combines everything. It's the single source for the calendar, the summary, and `buildICS`.
+7. Form state: `FIELDS` (field name → kind and default), `readCfg`, unit and goal switching, `localStorage` (`ptp.settings.v1`, `ptp.done.v1` for checkmarks), and links that carry settings in the page address.
+8. `render()` → `renderHints()`, `renderSummary()`; actions (copy link, `.ics` download, reset/undo, checkmarks); toggletips (`initTips`).
 
-To add a setting: add it to `FIELDS` and the form markup, read it in `readCfg`, and use it in `render`. It will be saved and included in shared links automatically.
+To add a setting: add it to `FIELDS` and the form markup, read it in `readCfg`, and use it in `computeCalendar`/`render`. It will be saved and included in shared links automatically. To add a goal, add a `GOALS` entry and a radio option.
 
 ## Front-end conventions
 
@@ -36,11 +47,10 @@ To add a setting: add it to `FIELDS` and the form markup, read it in `readCfg`, 
 
 ## Verifying changes
 
-There is no test suite. Before committing:
+Run `pytest -q` (see README → Development for setup). CI runs the same suite on every PR and before each deploy.
 
-1. Open `index.html`, change several inputs, and check the browser console has no errors.
-2. Check widths of 320, 375, and 1280px: no horizontal scroll, and the week headers stay sticky on mobile.
-3. Print preview in landscape and portrait: the header row repeats, the reference guide starts on a new page, and the guide disappears when its box is unchecked.
-4. Switch units back and forth: the values should round-trip.
-5. Turn on dark mode.
-6. Try a shared link with odd parameters, for example `?miles=abc&goal=<x>`. It should ignore the bad values safely.
+Tests can't judge visual polish. For layout changes, also look at the page at phone width, in dark mode, and in print preview. If the UI changed noticeably, run `python scripts/screenshots.py`.
+
+Add a test for any new behavior. The `make_page(now=...)` fixture freezes the browser clock for date logic.
+
+In tests, wait with Playwright's `expect(...)` assertions, not `page.wait_for_function("...")`: the page's CSP blocks the `eval` that string-based waits need. Popover `toggle` events are async, so assert popover state and `aria-expanded` with `expect`.
