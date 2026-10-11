@@ -343,7 +343,7 @@ def test_no_calorie_target_explanation_is_optional(page):
     expect(tip).to_be_visible()
     expect(tip).to_contain_text("Why no calorie target?")
     expect(tip).to_contain_text("RED-S")
-    assert "Relative Energy Deficiency in Sport" in page.inner_text(".guide")
+    expect(page.locator(".guide")).to_contain_text("Relative Energy Deficiency in Sport")
 
 
 # ---------------------------------------------------------------- goals
