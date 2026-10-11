@@ -173,6 +173,40 @@ def test_opening_a_link_keeps_own_weight(page, base_url, stored, query, expected
     assert "weight" not in page.url  # an older link's weight is taken out of the address bar
 
 
+def fuel_line(page):
+    return next((l for l in page.inner_text("#summary").split("\n") if l.startswith("Fuel & fluids")), "")
+
+
+def test_fuel_ranges_from_weight_and_sweat_test(page):
+    """Issue #21: optional inputs unlock carb/protein ranges and a drink plan, never a calorie target."""
+    assert fuel_line(page) == ""
+    fill(page, "#weight", "150")  # 68 kg
+    line = fuel_line(page)
+    assert "Carbs about 340–475 g a day on most training days" in line and "protein about 80–110 g a day" in line
+    assert "kcal" not in line and "calorie" not in line.lower()
+    page.click("#fuelDetails summary")
+    fill(page, "#sweatLoss", "2")     # 2 lb + 16 fl oz in an hour = about 1.38 L/h
+    fill(page, "#sweatDrink", "16")
+    assert "You sweat about 47 fl oz an hour" in fuel_line(page) and "drink about 23–37 fl oz an hour" in fuel_line(page)
+    pick(page, "units", "metric")
+    assert values(page, "weight", "sweatLoss", "sweatDrink") == ["68", "0.9", "473"]
+    assert "You sweat about 1.4 L an hour" in fuel_line(page)
+    assert "sweat" not in page.evaluate("shareUrl()")  # personal data stays out of links
+
+
+def test_sweat_test_weight_gain_warns_about_overdrinking(page):
+    page.click("#fuelDetails summary")
+    fill(page, "#sweatLoss", "-1")
+    fill(page, "#sweatDrink", "40")
+    assert "over-drinking can cause dangerous hyponatremia" in page.inner_text("#warnings")
+
+
+def test_long_run_shows_total_carbs_with_a_known_pace(make_page):
+    page = make_page("?easyPace=10:30")
+    longs = page.locator("td.long").all_inner_texts()
+    assert any("fuel 30–60 g carbs/hr (about 70–140 g in all)" in t for t in longs)
+
+
 def test_reset_and_undo(page):
     pick(page, "units", "metric")
     fill(page, "#weight", "70")
