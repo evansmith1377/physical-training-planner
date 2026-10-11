@@ -187,7 +187,8 @@ def test_fuel_ranges_from_weight_and_sweat_test(page):
     page.click("#fuelDetails summary")
     fill(page, "#sweatLoss", "2")     # 2 lb + 16 fl oz in an hour = about 1.38 L/h
     fill(page, "#sweatDrink", "16")
-    assert "You sweat about 47 fl oz an hour" in fuel_line(page) and "drink about 23–37 fl oz an hour" in fuel_line(page)
+    line = fuel_line(page)
+    assert "You sweat about 47 fl oz an hour" in line and "drink about 23–37 fl oz an hour" in line
     pick(page, "units", "metric")
     assert values(page, "weight", "sweatLoss", "sweatDrink") == ["68", "0.9", "473"]
     assert "You sweat about 1.4 L an hour" in fuel_line(page)
