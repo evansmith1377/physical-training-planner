@@ -336,11 +336,15 @@ def test_toggletip_opens_and_closes(page):
 
 def test_no_calorie_target_explanation_is_optional(page):
     """The 'why no calorie target' reasoning is a toggletip: hidden until asked for, and sourced in the guide."""
-    tip = page.locator("#tipNoCalories")
+    tip, btn = page.locator("#tipNoCalories"), page.locator('button[popovertarget="tipNoCalories"]')
     expect(tip).to_be_hidden()
-    page.click('button[popovertarget="tipNoCalories"]')  # next to the body-weight field, always reachable
+    btn.click()  # next to the body-weight field, always reachable
     expect(tip).to_be_visible()
+    expect(btn).to_have_attribute("aria-expanded", "true")
     expect(tip).to_contain_text("Why no calorie target?")
+    page.keyboard.press("Escape")
+    expect(tip).to_be_hidden()
+    expect(btn).to_have_attribute("aria-expanded", "false")
     expect(page.locator(".guide")).to_contain_text("Relative Energy Deficiency in Sport")
 
 
