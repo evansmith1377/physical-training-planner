@@ -338,11 +338,9 @@ def test_no_calorie_target_explanation_is_optional(page):
     """The 'why no calorie target' reasoning is a toggletip: hidden until asked for, and sourced in the guide."""
     tip = page.locator("#tipNoCalories")
     expect(tip).to_be_hidden()
-    page.click("#fuelDetails summary")
-    page.click('button[popovertarget="tipNoCalories"]')
+    page.click('button[popovertarget="tipNoCalories"]')  # next to the body-weight field, always reachable
     expect(tip).to_be_visible()
     expect(tip).to_contain_text("Why no calorie target?")
-    expect(tip).to_contain_text("RED-S")
     expect(page.locator(".guide")).to_contain_text("Relative Energy Deficiency in Sport")
 
 

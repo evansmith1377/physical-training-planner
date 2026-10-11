@@ -103,6 +103,8 @@ button.primary { background: var(--accent); border-color: var(--accent); color: 
 /* ---------- Hints, toggletips, status ---------- */
 .optional { font-weight: 500; font-size: .78rem; color: var(--muted); border: 1px solid var(--line); border-radius: 999px; padding: 0 .45rem; margin-inline-start: .3rem; vertical-align: middle; }
 .label-row { display: flex; align-items: center; gap: .4rem; margin-block-end: .3rem; }
+.hint-row { margin-block-end: .4rem; }
+.hint-row > .hint { margin: 0; }
 .label-row > label, .label-row > .group-label { margin-block-end: 0; font-weight: 650; font-size: .92rem; }
 .tip { inline-size: 1.6rem; block-size: 1.6rem; min-block-size: 0; padding: 0; border-radius: 50%; border: 1.5px solid var(--muted); background: var(--paper); color: var(--muted); font: italic 700 .85rem/1 Georgia, "Times New Roman", serif; cursor: pointer; flex: none; position: relative; }
 .tip::after { content: ""; position: absolute; inset: -.6rem; } /* expands tap target to ~44px without changing layout */
@@ -306,7 +308,11 @@ footer.site { margin-block-start: 1.5rem; font-size: .85rem; color: var(--muted)
         <span class="err" id="longErr" data-range="longrun"></span>
       </div>
       <div class="field">
-        <label for="weight">Body weight (<span data-u="weight">lb</span>) <span class="optional">optional</span></label>
+        <div class="label-row">
+          <label for="weight">Body weight (<span data-u="weight">lb</span>) <span class="optional">optional</span></label>
+          <button type="button" class="tip" popovertarget="tipNoCalories" aria-label="Why there's no calorie target">i</button>
+          <div id="tipNoCalories" popover class="tipbox"><strong>Why no calorie target?</strong> A calorie number built from a few inputs is often off by 10–20%, and it's easy to treat as a limit. Eating too little for your training (low energy availability, or REDs) raises the risk of stress fractures, illness, hormone and menstrual changes, and stalled progress. So the planner gives carb and protein ranges and lets hunger fill in the rest. For exact energy needs (weight change, pregnancy, a medical condition, or a history of disordered eating), work with a sports dietitian or clinician.</div>
+        </div>
         <input id="weight" name="weight" type="number" inputmode="decimal" min="70" max="550" step="1" enterkeyhint="next" aria-describedby="weightHint weightErr">
         <span class="hint" id="weightHint">Unlocks daily carb and protein ranges (see Fuel &amp; fluids) and a rough running-energy figure each week. It stays in your browser and never goes into shared links.</span>
         <span class="err" id="weightErr" data-range="weight"></span>
@@ -454,8 +460,8 @@ footer.site { margin-block-start: 1.5rem; font-size: .85rem; color: var(--muted)
 
     <details id="paceDetails">
       <summary>Pacing <span class="optional">optional</span> — add suggested <span data-u="pace">min/mi</span> paces alongside effort</summary>
-      <div class="label-row" style="margin-block-end:.4rem">
-        <p class="hint" style="margin:0">Enter a recent race result, the paces you already know, or both. Leave everything blank for effort-only guidance.</p>
+      <div class="label-row hint-row">
+        <p class="hint">Enter a recent race result, the paces you already know, or both. Leave everything blank for effort-only guidance.</p>
         <button type="button" class="tip" popovertarget="tipPaceCalc" aria-label="How paces are calculated">i</button>
         <div id="tipPaceCalc" popover class="tipbox">Paces come from the Daniels/Gilbert race-equivalency formulas, which estimate equal-effort paces from one race result. Easy covers roughly 62–70% of your aerobic capacity, tempo about 88%, and the race-effort range adds a small buffer (15 s/mi for the marathon, 6 s/mi for the half) to the predicted pace. These formulas tend to be optimistic, especially for a first marathon, so treat paces as a ceiling and let effort decide.</div>
       </div>
@@ -493,11 +499,7 @@ footer.site { margin-block-start: 1.5rem; font-size: .85rem; color: var(--muted)
 
     <details id="fuelDetails">
       <summary>Fuel &amp; fluids <span class="optional">optional</span> — carb, protein and drink amounts sized to you</summary>
-      <div class="label-row" style="margin-block-end:.4rem">
-        <p class="hint" style="margin:0">Your body weight (above) gives daily carb and protein ranges. For a drink plan, do a one-hour sweat test: weigh yourself without clothes before and after an easy 60-minute run, and note what you drank. These numbers stay in this browser and never go into shared links.</p>
-        <button type="button" class="tip" popovertarget="tipNoCalories" aria-label="Why there's no calorie target">i</button>
-        <div id="tipNoCalories" popover class="tipbox"><strong>Why no calorie target?</strong> A calorie number built from a few inputs is often off by 10–20%, and it's easy to treat as a limit. Eating too little for your training (low energy availability, or RED-S) raises the risk of stress fractures, illness, hormone and menstrual changes, and stalled progress. So the planner gives carb and protein ranges and lets hunger fill in the rest. For exact energy needs (weight change, pregnancy, a medical condition, or a history of disordered eating), work with a sports dietitian or clinician.</div>
-      </div>
+      <p class="hint">Your body weight (above) gives daily carb and protein ranges. For a drink plan, do a one-hour sweat test: weigh yourself without clothes before and after an easy 60-minute run, and note what you drank. These numbers stay in this browser and never go into shared links.</p>
       <div class="pace-grid">
         <div class="field">
           <label for="sweatLoss">Weight lost on a 1-hour run (<span data-u="weight">lb</span>)</label>
@@ -596,7 +598,7 @@ footer.site { margin-block-start: 1.5rem; font-size: .85rem; color: var(--muted)
 <div class="topic">
 <h3>Nutrition</h3>
 <ul>
-<li><strong>No fixed calorie target</strong> without age, sex, height, weight, health context, and activity. Eat enough for daily needs plus training; avoid intentional restriction while building endurance unless supervised.</li>
+<li><strong>No fixed calorie target</strong> without age, sex, height, weight, health context, and activity. Eat enough for daily needs plus training; avoid intentional restriction while building endurance unless supervised. Eating too little for your training (low energy availability, or REDs) raises the risk of injury, illness and stalled progress.</li>
 <li><strong>Running energy:</strong> roughly 1 kcal per kg per km (≈0.7 kcal per lb per mile). Add it to usual needs — it's not a ceiling.</li>
 <li><strong>Carbohydrate:</strong> about 5–7 g/kg/day in moderate training, more on long or demanding days as tolerated. <strong>Protein:</strong> about 1.2–1.6 g/kg/day, spread across meals.</li>
 <li><strong>Before long runs:</strong> familiar carb-rich meal or snack 1–4 h before. <strong>During runs over 75–90 min:</strong> practice 30–60 g carbs/hour; build toward more only gradually. <strong>After:</strong> carbs + protein + fluids.</li>
