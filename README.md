@@ -60,7 +60,7 @@ When inputs conflict, the page shows a warning instead of silently adjusting. Ex
 
 ## Development
 
-The site needs nothing to run. The tests use Python, pytest and Playwright (with axe-core for accessibility):
+The site needs nothing to run. The tests use Python (CI runs 3.14; 3.12 or newer works locally), pytest and Playwright (with axe-core for accessibility):
 
 ```sh
 pip install -r requirements-dev.txt

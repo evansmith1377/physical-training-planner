@@ -47,8 +47,8 @@ def make_page(browser, base_url):
         )
         contexts.append(ctx)
         page = ctx.new_page()
-        page.on("console", lambda m: m.type in ("error", "warning") and errors.append(f"{m.type}: {m.text}"))
-        page.on("pageerror", lambda e: errors.append(str(e)))
+        page.on("console", lambda m: m.type in ("error", "warning") and errors.append(f"console {m.type}: {m.text} ({m.location.get('url', '')}:{m.location.get('lineNumber', '')})"))
+        page.on("pageerror", lambda e: errors.append(f"page error: {e}"))
         if now:
             page.clock.set_fixed_time(now)
         page.goto(base_url + query)
