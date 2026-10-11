@@ -30,6 +30,7 @@ The page is a single `index.html` with no build step, no dependencies, and no ne
 - **Checkmarks.** Tick off workouts on screen; they're saved in your browser and print as checkboxes (ticked ones print ticked). A tick belongs to its day and type of workout, so changing the plan never moves it onto a different workout.
 - **US or metric units.** Switching converts the values you've already entered.
 - **Optional pace guidance.** From a recent race, a known easy pace, or a goal race pace, the calendar shows easy, tempo, steady and race-effort paces next to the effort cues.
+- **Optional fuel & fluids.** With your body weight, the summary gives daily carb and protein ranges (Thomas, Erdman & Burke 2016). A one-hour sweat test (weight lost and fluid drunk) adds a drink-per-hour range that stays below your sweat rate, and warns about over-drinking. Long runs show total carbs when your easy pace is known. There are never calorie targets, and these inputs never go into shared links.
 - **Print-ready.**
   - Landscape or portrait, US Letter or A4, with the calendar header repeated on every page.
   - An optional reference guide follows the calendar: effort, nutrition, strength exercises, hydration, safety and sources. It starts on a new page, and each topic (like the weekly self-check) stays on one page.
