@@ -79,6 +79,8 @@ def test_defaults_render_marathon_plan(page):
     ("?goal=half&days=4", "mi"),
     ("?units=metric&goal=half&days=6&miles=40&longrun=21&peakMiles=48&peakLong=21", "km"),
     ("?days=6&miles=70&longrun=20&peakMiles=75&peakLong=20", "mi"),
+    ("?goal=base&miles=1&longrun=1&peakMiles=15&peakLong=6&days=4", "mi"),
+    ("?units=metric&goal=base&miles=2&longrun=2&peakMiles=24&peakLong=10&days=5", "km"),
 ])
 def test_week_totals_equal_sum_of_days(make_page, query, unit):
     page = make_page(query)
@@ -190,8 +192,8 @@ def test_preset_applies_training_settings_and_undoes(page):
     assert current_preset(page) == ["emily"]  # the defaults are Emily's starting point
     fill(page, "#weight", "150")
     page.click('[data-preset="sofa"]')
-    assert values(page, "miles", "longrun", "weeks", "peakMiles", "peakLong", "weight") == ["12", "4", "24", "25", "10", "150"]
-    assert page.is_checked('input[name="goal"][value="half"]') and page.is_checked('input[name="days"][value="4"]')
+    assert values(page, "miles", "longrun", "weeks", "peakMiles", "peakLong", "weight") == ["1", "1", "20", "15", "6", "150"]
+    assert page.is_checked('input[name="goal"][value="base"]') and page.is_checked('input[name="days"][value="4"]')
     assert current_preset(page) == ["sofa"]
     expect(page.locator("#actionStatus")).to_have_text('Applied "Sofa Starter". Fine-tune anything below.')
     fill(page, "#miles", "13")  # any edit means no preset matches any more
@@ -199,7 +201,7 @@ def test_preset_applies_training_settings_and_undoes(page):
     page.click('[data-preset="emily"]')
     assert values(page, "miles", "longrun", "weeks", "peakMiles", "peakLong") == ["25", "13", "22", "38", "18"]
     page.click("#undoBtn")
-    assert values(page, "miles", "weeks") == ["13", "24"]
+    assert values(page, "miles", "weeks") == ["13", "20"]
 
 
 def test_presets_keep_units_and_convert(page):
@@ -228,8 +230,8 @@ def test_undo_after_several_presets_restores_own_settings(page):
 
 def test_preset_keeps_plan_length_that_fits_race_date(make_page):
     page = make_page("?anchorDate=2027-01-02&weeks=13", now=NOW)
-    page.click('[data-preset="sofa"]')
-    assert values(page, "weeks", "miles") == ["13", "12"]
+    page.click('[data-preset="weekend"]')
+    assert values(page, "weeks", "miles") == ["13", "22"]
     expect(page.locator("#actionStatus")).to_contain_text("Kept your 13-week plan to fit your race date.")
 
 
@@ -360,7 +362,7 @@ def test_plan_invariants_across_settings(page):
     problems = page.evaluate("""() => {
       const bad = [];
       for (const goal of ['marathon', 'half', 'base']) for (const days of [4, 5, 6]) for (const cutEvery of [3, 4])
-      for (const longDay of [5, 6]) for (const weeks of [10, 16, 24]) for (const start of [[12, 4], [25, 13], [45, 20], [70, 20, 85]]) {
+      for (const longDay of [5, 6]) for (const weeks of [10, 16, 24]) for (const start of [[1, 1, 15], [12, 4], [25, 13], [45, 20], [70, 20, 85]]) {
         const G = GOALS[goal];
         const cfg = { units: 'us', startMiles: start[0], startLong: start[1], peakMiles: start[2] ?? G.defaults.us[0], peakLong: G.defaults.us[1],
           goal, weeks, cutEvery, taper: G.defTaper || 0, days, longDay, restDay: longDay === 6 ? 0 : 6, strength: 2,
@@ -378,6 +380,29 @@ def test_plan_invariants_across_settings(page):
       return bad.slice(0, 10);
     }""")
     assert problems == []
+
+
+def test_couch_start_builds_with_run_walk_and_walk_days(page):
+    """From 1 mi a week: weeks hold the planned volume (no 2 mi floors), spare days are walks, and
+    until the build passes LOW_MI runs are run/walk, never longer than the long run, with no tempo.
+    Tempo then starts at the gentlest step, and a later cutback doesn't bring run/walk back."""
+    low_mi = page.evaluate("LOW_MI")
+    weeks, first_tempo = page.evaluate("""() => [computeCalendar({ ...readCfg(), goal: 'base', startMiles: 1, startLong: 1, peakMiles: 20,
+        peakLong: 8, weeks: 30, cutEvery: 3, days: 4, strength: 1 }).weeks.map(w => ({ miles: w.wk.miles, long: w.wk.long,
+        low: w.wk.low, total: w.total, texts: w.cells.map(c => c.t + ' ' + c.det) })), TEMPO[0].text]""")
+    assert weeks[0]["total"] == 1
+    assert sum("Walk · 20–30 min" in t for t in weeks[0]["texts"]) == 2
+    for w in weeks:
+        runs = [float(m) for t in w["texts"] for m in re.findall(r"^(?:Easy|Recovery) · ([\d.]+) mi", t)]
+        assert any("Run/walk is fine" in t for t in w["texts"]) == w["low"], w
+        if w["low"]:
+            assert w["total"] <= w["miles"] + 0.5, w  # no padding up to 2 mi a run day
+            assert not any(t.startswith("Tempo") for t in w["texts"]) and all(r <= max(w["long"], 2) for r in runs), w
+    tempos = [t for w in weeks for t in w["texts"] if t.startswith("Tempo")]
+    assert tempos and first_tempo in tempos[0]
+    assert not weeks[23]["low"] and weeks[23]["miles"] < low_mi  # the week-24 cutback stays out of run/walk
+    miles = [w["miles"] for w in weeks]
+    assert all(m <= max(miles[:i]) * 1.5 + 0.01 for i, m in enumerate(miles) if i), miles  # no doubling from a tiny base
 
 
 @pytest.mark.parametrize("query,peak", [
