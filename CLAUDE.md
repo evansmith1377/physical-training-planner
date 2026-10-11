@@ -71,13 +71,13 @@ Design, build, test and review every change through each lens that applies, not 
 - **Sports medicine / physiotherapy:** are injury, illness and heat warnings visible? Does anything push through pain or ignore a red flag?
 - **Sports dietitian:** no restriction messaging; fueling advice matches the cited position stands.
 
-The expert lenses are for checking, not a stand-in for real professionals. Changes to plan rules, safety warnings or nutrition text must cite a source and be flagged in the PR for review by a qualified person before merge.
+Apply these expert lenses yourself during design and review; changes don't wait for a human trainer or clinician. Changes to plan rules, safety warnings or nutrition text must cite a source, and the PR must say what the coach, sports-medicine and dietitian lenses concluded (and what each changed).
 
 **Personas** (walk each change through the ones it affects)
 - **Emily (the defaults):** 25 mi a week, 13 mi long run, stepping up from the half to a first marathon in 22 weeks, 5 run days, 2 strength days. Resetting to defaults always brings back her plan.
-- **New runner:** 12–15 mi a week, aiming at a first half. Needs reassurance, clear effort cues, and no unexplained jargon.
+- **New runner:** from the couch (1 mi a week) up to about 15, aiming at steady running or a first half. Needs reassurance, clear effort cues, and no unexplained jargon.
 - **High-mileage runner:** 50–70 mi a week, according to Strava. Needs wide input ranges, and doesn't want to be talked down to.
-- **Returning or older runner:** coming back from injury or a break. Needs conservative ramps, visible red flags, and an clear guidance on repeating a week.
+- **Returning or older runner:** coming back from injury or a break. Needs conservative ramps, visible red flags, and clear guidance on repeating a week.
 - **Phone-only runner:** opens a shared link on a phone and ticks off workouts there.
 - **Coach or friend sharing a plan:** sends a link and prints a copy, expecting the recipient to see exactly the same plan.
 
@@ -86,7 +86,7 @@ The expert lenses are for checking, not a stand-in for real professionals. Chang
 1. Start from the issue, if there is one. Restate the user's problem, and pick the lenses and personas that apply.
 2. Build the smallest change that solves it on a branch, following the conventions above. Verify it as described in *Verifying changes*.
 3. Run `/simplify`, then `/code-review`. Fix what's real, and note what you skipped and why. Also run `/security-review` when a change touches input handling, storage, links, the CSP or workflows.
-4. Open a PR from the template, with `Closes #n` if there's an issue. Request a reviewer for any expert-review flag: the ruleset doesn't require approvals, so that gate is on you.
+4. Open a PR from the template, with `Closes #n` if there's an issue.
 5. Loop on CI and review threads until CI is green and every thread is answered and resolved. The ruleset in `.github/rulesets/main.json` requires the `test` check and resolved threads before merge.
 6. Squash-merge, then confirm the Pages deploy succeeded.
 
