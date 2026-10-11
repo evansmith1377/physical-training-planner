@@ -384,7 +384,8 @@ def test_plan_invariants_across_settings(page):
 
 def test_couch_start_builds_with_run_walk_and_walk_days(page):
     """From 1 mi a week: weeks hold the planned volume (no 2 mi floors), spare days are walks,
-    runs are run/walk and never longer than the long run, and there's no tempo below 15 mi a week."""
+    runs are run/walk and never longer than the long run, and there's no tempo below LOW_MI a week."""
+    low_mi = page.evaluate("LOW_MI")
     weeks = page.evaluate("""() => computeCalendar({ ...readCfg(), goal: 'base', startMiles: 1, startLong: 1, peakMiles: 15, peakLong: 6,
         weeks: 20, cutEvery: 3, days: 4, strength: 1 }).weeks.map(w => ({ miles: w.wk.miles, long: w.wk.long, total: w.total,
         texts: w.cells.map(c => c.t + ' ' + c.det) }))""")
@@ -393,7 +394,7 @@ def test_couch_start_builds_with_run_walk_and_walk_days(page):
     for w in weeks:
         assert w["total"] <= w["miles"] + 1, w
         runs = [float(m) for t in w["texts"] for m in re.findall(r"^(?:Easy|Recovery) · ([\d.]+) mi", t)]
-        if w["miles"] < 15:
+        if w["miles"] < low_mi:
             assert not any(t.startswith("Tempo") for t in w["texts"]) and all(r <= max(w["long"], 2) for r in runs), w
             assert any("Run/walk is fine" in t for t in w["texts"]), w
 
