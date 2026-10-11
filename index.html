@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="color-scheme" content="light dark">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-+icPEvFfrre3dXUJriccDh6am2xVWhJ1mWY5MO3yCoU='; style-src 'unsafe-inline'; img-src 'self' data:; base-uri 'none'; form-action 'none'; object-src 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-AyEcqjbC+uC8DyuDPMkzUslKA8jugxw5qiwZKXPya3I='; style-src 'unsafe-inline'; img-src 'self' data:; base-uri 'none'; form-action 'none'; object-src 'none'">
 <meta name="description" content="Free printable training calendar for the marathon or half marathon. Enter your current mileage to get a week-by-week, readiness-based plan with optional pace guidance and calendar export.">
 <link rel="canonical" href="https://evansmith1377.github.io/physical-training-planner/">
 <meta name="theme-color" content="#f3f6f8" media="(prefers-color-scheme: light)">
@@ -676,7 +676,7 @@ const TEMPO = [
   { text: '2 × 12 min tempo, 3 min jog' }, { text: '3 × 10 min tempo, 2 min jog' },
   { text: '20 min continuous tempo' }
 ];
-/* Below this weekly volume (miles) runs are run/walk and there is no tempo or race-effort work. */
+/* Beginner volume (miles a week): below it runs are run/walk and there's no tempo or race-effort work yet. */
 const LOW_MI = 15, RUN_WALK = 'Run/walk is fine, e.g. 1 min run, 1–2 min walk; keep it easy';
 const WEIGHTS = { quality: 1.15, medium: 1.35, easy: 1.0, prelong: 0.65, recovery: 0.6 };
 const PHASE_NAMES = { 1: 'Stabilize', 2: 'Build durability', 3: 'Race-specific', 4: 'Taper' };
@@ -930,7 +930,8 @@ function generatePlan(cfg, U, G) {
       maxM = Math.max(maxM, M); maxL = Math.max(maxL, full);
       if (wk.phase === 3 && p3Entry === null) p3Entry = { M, L: full };
 
-      if (wk.phase === 1 || cut) wk.q = { kind: 'strides' };
+      wk.low = M < LOW_MI;  /* judged on the build level, so a cutback doesn't bring run/walk back */
+      if (wk.phase === 1 || cut || wk.low) wk.q = { kind: 'strides' };
       else if (wk.phase === 2) wk.q = { kind: 'tempo', t: TEMPO[Math.min(tempoI++, TEMPO.length - 1)] };
       else {
         p3n++;
@@ -942,6 +943,7 @@ function generatePlan(cfg, U, G) {
       wk.strengthCount = cfg.strength;
     } else {
       const ti = w - buildEnd;
+      wk.low = maxM < LOW_MI;
       if (w === W) {
         wk.race = true;
         wk.miles = maxM * G.raceWeek;
@@ -951,7 +953,7 @@ function generatePlan(cfg, U, G) {
       } else {
         wk.miles = maxM * G.taperM[T][ti - 1];
         wk.long = r05(maxL * G.taperL[T][ti - 1]);
-        wk.q = ti === 1 ? { kind: 'mp', ...G.taperQ } : { kind: 'tempo', t: { text: '3 × 5 min tempo, 2 min jog' } };
+        wk.q = wk.low ? { kind: 'strides' } : ti === 1 ? { kind: 'mp', ...G.taperQ } : { kind: 'tempo', t: { text: '3 × 5 min tempo, 2 min jog' } };
         wk.strength = 'taper';
         wk.strengthCount = Math.min(1, cfg.strength);
       }
@@ -972,10 +974,8 @@ function buildWeekDays(wk, layout, cfg, U, paces, G) {
   const runDays = [0,1,2,3,4,5,6].filter(d => WEIGHTS[roles[d]]);
   const nonLong = Math.max(0, wk.miles - wk.long);
   const sumW = runDays.reduce((a, d) => a + WEIGHTS[roles[d]], 0) || 1;
-  /* Beginner volume: run/walk, and no tempo or race-effort work until there's a base for it. */
-  const low = wk.miles < LOW_MI;
-  const q = low && (wk.q.kind === 'tempo' || wk.q.kind === 'mp') ? { kind: 'strides' } : wk.q;
-  const dist = {};
+  const { low, q } = wk;
+  const dist = {};  /* run days left out of dist are walk days */
   const thin = nonLong < 2 * runDays.length;
   if (thin) {
     /* Too little to give every run day 2 mi: short runs (no longer than the long run, at most 2 mi) on the busiest days, walks on the rest. */
@@ -1560,8 +1560,7 @@ function applyPreset(id, name) {
   let kept = '';
   replaceSettings(() => {
     const v = presetValues(id, getField('units'));
-    if (GOALS[v.goal].race) v.taper ??= GOALS[v.goal].defTaper;  /* a starting point uses the goal's usual taper */
-    if (v.taper) setField('taper', v.taper);
+    if (GOALS[v.goal].race) setField('taper', v.taper ?? GOALS[v.goal].defTaper);  /* a starting point uses the goal's usual taper */
     goalTransition(GOALS[currentGoal], GOALS[v.goal]);
     /* A race date the visitor set still decides the plan length. */
     if (GOALS[v.goal].race && getField('anchorDate')) { kept = ` Kept your ${getField('weeks')}-week plan to fit your race date.`; delete v.weeks; }

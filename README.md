@@ -44,7 +44,7 @@ All distances are calculated in miles and converted for display.
 | Rule | Value |
 |---|---|
 | Weekly distance inputs | Usual 1–99 mi (2–160 km); peak 10–99 mi (16–160 km) |
-| Low volume | Under 15 mi (24 km) a week, runs are run/walk and there's no tempo or race-effort work. If a week can't give every run day 2 mi, it runs on the busiest days (each no longer than the long run, at most 2 mi) and the other days are brisk walks |
+| Low volume | Under 15 mi (24 km) a week: run/walk and no tempo or race-effort work. When a week can't give every run day 2 mi, the spare run days become brisk walks |
 | Phase 1 (Stabilize) | 3 weeks at your current distance and long run (long run up to 55% of the week) |
 | Weekly build | +8% per build week (min 1.5 mi, max 3 mi), up to your peak |
 | Long run | +1 mi per build week at most and ≤ 50% of the week. Once at the peak, it alternates between the peak and about 85% of it. Capped at 20 mi (marathon), 14 mi (half), 16 mi (durability) |

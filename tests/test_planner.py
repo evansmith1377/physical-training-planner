@@ -383,20 +383,23 @@ def test_plan_invariants_across_settings(page):
 
 
 def test_couch_start_builds_with_run_walk_and_walk_days(page):
-    """From 1 mi a week: weeks hold the planned volume (no 2 mi floors), spare days are walks,
-    runs are run/walk and never longer than the long run, and there's no tempo below LOW_MI a week."""
-    low_mi = page.evaluate("LOW_MI")
-    weeks = page.evaluate("""() => computeCalendar({ ...readCfg(), goal: 'base', startMiles: 1, startLong: 1, peakMiles: 15, peakLong: 6,
-        weeks: 20, cutEvery: 3, days: 4, strength: 1 }).weeks.map(w => ({ miles: w.wk.miles, long: w.wk.long, total: w.total,
-        texts: w.cells.map(c => c.t + ' ' + c.det) }))""")
+    """From 1 mi a week: weeks hold the planned volume (no 2 mi floors), spare days are walks, and
+    until the build passes LOW_MI runs are run/walk, never longer than the long run, with no tempo.
+    Tempo then starts at the gentlest step, and a later cutback doesn't bring run/walk back."""
+    weeks, first_tempo = page.evaluate("""() => [computeCalendar({ ...readCfg(), goal: 'base', startMiles: 1, startLong: 1, peakMiles: 15,
+        peakLong: 6, weeks: 20, cutEvery: 3, days: 4, strength: 1 }).weeks.map(w => ({ miles: w.wk.miles, long: w.wk.long,
+        low: w.wk.low, total: w.total, texts: w.cells.map(c => c.t + ' ' + c.det) })), TEMPO[0].text]""")
     assert weeks[0]["total"] == 1
     assert sum("Walk · 20–30 min" in t for t in weeks[0]["texts"]) == 2
     for w in weeks:
         assert w["total"] <= w["miles"] + 1, w
         runs = [float(m) for t in w["texts"] for m in re.findall(r"^(?:Easy|Recovery) · ([\d.]+) mi", t)]
-        if w["miles"] < low_mi:
+        assert any("Run/walk is fine" in t for t in w["texts"]) == w["low"], w
+        if w["low"]:
             assert not any(t.startswith("Tempo") for t in w["texts"]) and all(r <= max(w["long"], 2) for r in runs), w
-            assert any("Run/walk is fine" in t for t in w["texts"]), w
+    tempos = [t for w in weeks for t in w["texts"] if t.startswith("Tempo")]
+    assert tempos and first_tempo in tempos[0]
+    assert not weeks[-3]["low"] and weeks[-3]["miles"] < 15  # the week-18 cutback stays out of run/walk
 
 
 @pytest.mark.parametrize("query,peak", [
