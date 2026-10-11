@@ -191,21 +191,46 @@ def test_fuel_ranges_from_weight_and_sweat_test(page):
     assert "You sweat about 47 fl oz an hour" in line and "drink about 23–37 fl oz an hour" in line
     pick(page, "units", "metric")
     assert values(page, "weight", "sweatLoss", "sweatDrink") == ["68", "0.9", "473"]
-    assert "You sweat about 1.4 L an hour" in fuel_line(page)
+    assert "You sweat about 1350 ml an hour" in fuel_line(page) and "drink about 700–1100 ml an hour" in fuel_line(page)
     assert "sweat" not in page.evaluate("shareUrl()")  # personal data stays out of links
 
 
-def test_sweat_test_weight_gain_warns_about_overdrinking(page):
+@pytest.mark.parametrize("loss,drink,warns", [
+    ("-1", "40", True),
+    ("-1", "", True),       # a gain alone is the red flag, even without the drink amount
+    ("-0.2", "30", False),  # within scale noise
+])
+def test_sweat_test_weight_gain_warns_about_overdrinking(page, loss, drink, warns):
     page.click("#fuelDetails summary")
-    fill(page, "#sweatLoss", "-1")
-    fill(page, "#sweatDrink", "40")
-    assert "over-drinking can cause dangerous hyponatremia" in page.inner_text("#warnings")
+    fill(page, "#sweatLoss", loss)
+    fill(page, "#sweatDrink", drink)
+    assert ("over-drinking can cause dangerous hyponatremia" in page.inner_text("#warnings")) == warns
+
+
+def test_sweat_test_out_of_range_is_ignored_with_a_warning(page):
+    page.click("#fuelDetails summary")
+    fill(page, "#sweatLoss", "12")
+    fill(page, "#sweatDrink", "20")
+    assert "outside the expected range, so no drink plan is shown" in page.inner_text("#warnings")
+    assert "You sweat" not in fuel_line(page)
+
+
+@pytest.mark.parametrize("units,loss,drink", [("metric", "-2.5", "3000"), ("metric", "4.8", "0"), ("us", "10.6", "101"), ("us", "-5.5", "0")])
+def test_sweat_test_edges_survive_unit_switches(page, units, loss, drink):
+    pick(page, "units", units)
+    page.click("#fuelDetails summary")
+    fill(page, "#sweatLoss", loss)
+    fill(page, "#sweatDrink", drink)
+    pick(page, "units", "us" if units == "metric" else "metric")
+    pick(page, "units", units)
+    assert "outside the expected range" not in page.inner_text("#warnings")
+    assert page.locator("#sweatLoss:invalid, #sweatDrink:invalid").count() == 0
 
 
 def test_long_run_shows_total_carbs_with_a_known_pace(make_page):
     page = make_page("?easyPace=10:30")
     longs = page.locator("td.long").all_inner_texts()
-    assert any("fuel 30–60 g carbs/hr (about 70–140 g in all)" in t for t in longs)
+    assert any("fuel 30–60 g carbs/hr (about 55–110 g after the first half hour)" in t for t in longs)  # ~2:20 run
 
 
 def test_reset_and_undo(page):

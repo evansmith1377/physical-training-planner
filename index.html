@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="color-scheme" content="light dark">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-rulN/BEjSb2QXAE+VMf5pFpA2LBnTmsBKvsDi7jUzQk='; style-src 'unsafe-inline'; img-src 'self' data:; base-uri 'none'; form-action 'none'; object-src 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-7JkXrwM5rl3hcLWiOj8ASCCDo75gWjjiZIAc7XcVGoQ='; style-src 'unsafe-inline'; img-src 'self' data:; base-uri 'none'; form-action 'none'; object-src 'none'">
 <meta name="description" content="Free printable training calendar for the marathon or half marathon. Enter your current mileage to get a week-by-week, readiness-based plan with optional pace guidance and calendar export.">
 <link rel="canonical" href="https://evansmith1377.github.io/physical-training-planner/">
 <meta name="theme-color" content="#f3f6f8" media="(prefers-color-scheme: light)">
@@ -308,7 +308,7 @@ footer.site { margin-block-start: 1.5rem; font-size: .85rem; color: var(--muted)
       <div class="field">
         <label for="weight">Body weight (<span data-u="weight">lb</span>) <span class="optional">optional</span></label>
         <input id="weight" name="weight" type="number" inputmode="decimal" min="70" max="550" step="1" enterkeyhint="next" aria-describedby="weightHint weightErr">
-        <span class="hint" id="weightHint">Unlocks daily carb and protein ranges (see Fuel &amp; fluids) and a rough running-energy figure each week.</span>
+        <span class="hint" id="weightHint">Unlocks daily carb and protein ranges (see Fuel &amp; fluids) and a rough running-energy figure each week. It stays in your browser and never goes into shared links.</span>
         <span class="err" id="weightErr" data-range="weight"></span>
       </div>
     </fieldset>
@@ -493,17 +493,17 @@ footer.site { margin-block-start: 1.5rem; font-size: .85rem; color: var(--muted)
 
     <details id="fuelDetails">
       <summary>Fuel &amp; fluids <span class="optional">optional</span> — carb, protein and drink amounts sized to you</summary>
-      <p class="hint">Your body weight (above) gives daily carb and protein ranges. For a drink plan, do a one-hour sweat test: weigh yourself without clothes before and after an easy 60-minute run, and note what you drank. Your weight and these numbers stay in this browser and are never put in shared links.</p>
+      <p class="hint">Your body weight (above) gives daily carb and protein ranges. For a drink plan, do a one-hour sweat test: weigh yourself without clothes before and after an easy 60-minute run, and note what you drank. These numbers stay in this browser and never go into shared links.</p>
       <div class="pace-grid">
         <div class="field">
           <label for="sweatLoss">Weight lost on a 1-hour run (<span data-u="weight">lb</span>)</label>
-          <input id="sweatLoss" name="sweatLoss" type="number" inputmode="decimal" step="0.1" min="-5" max="10" enterkeyhint="next" aria-describedby="sweatLossHint sweatLossErr">
+          <input id="sweatLoss" name="sweatLoss" type="number" inputmode="decimal" step="0.1" min="-5.5" max="10.6" enterkeyhint="next" aria-describedby="sweatLossHint sweatLossErr">
           <span class="hint" id="sweatLossHint">Before minus after. Enter a negative number if you gained weight.</span>
           <span class="err" id="sweatLossErr" data-range="sweatLoss"></span>
         </div>
         <div class="field">
           <label for="sweatDrink">Fluid drunk during that run (<span data-u="fluid">fl oz</span>)</label>
-          <input id="sweatDrink" name="sweatDrink" type="number" inputmode="decimal" step="1" min="0" max="100" enterkeyhint="done" aria-describedby="sweatDrinkHint sweatDrinkErr">
+          <input id="sweatDrink" name="sweatDrink" type="number" inputmode="decimal" step="1" min="0" max="101" enterkeyhint="done" aria-describedby="sweatDrinkHint sweatDrinkErr">
           <span class="hint" id="sweatDrinkHint">Enter 0 if you drank nothing.</span>
           <span class="err" id="sweatDrinkErr" data-range="sweatDrink"></span>
         </div>
@@ -732,14 +732,14 @@ const GOALS = {
 
 /* Input ranges per unit system (distance fields only). */
 const RANGES = {
-  us:     { miles: [1, 99], longrun: [1, 20], peakMiles: [10, 99], peakLong: [4, 20], weight: [70, 550], sweatLoss: [-5, 10], sweatDrink: [0, 100] },
-  metric: { miles: [2, 160], longrun: [2, 32], peakMiles: [16, 160], peakLong: [6, 32], weight: [32, 250], sweatLoss: [-2.5, 4.5], sweatDrink: [0, 3000] }
+  us:     { miles: [1, 99], longrun: [1, 20], peakMiles: [10, 99], peakLong: [4, 20], weight: [70, 550], sweatLoss: [-5.5, 10.6], sweatDrink: [0, 101] },
+  metric: { miles: [2, 160], longrun: [2, 32], peakMiles: [16, 160], peakLong: [6, 32], weight: [32, 250], sweatLoss: [-2.5, 4.8], sweatDrink: [0, 3000] }
 };
 
 /* =============================== unit formatting =============================== */
 function makeUnits(units) {
   const metric = units === 'metric';
-  const fl = l => metric ? fmt1(l) : Math.round(l * 1000 / ML_PER_FLOZ);  /* litres -> displayed number */
+  const fl = l => metric ? Math.round(l * 20) * 50 : Math.round(l * 1000 / ML_PER_FLOZ);  /* litres -> ml (nearest 50) or fl oz */
   return {
     metric,
     abbr: metric ? 'km' : 'mi',
@@ -747,8 +747,8 @@ function makeUnits(units) {
     val: mi => metric ? Math.round(mi * KM_PER_MI) : r05(mi),
     D: mi => `${fmt1(metric ? Math.round(mi * KM_PER_MI) : r05(mi))} ${metric ? 'km' : 'mi'}`,
     /* fluid in litres -> "0.6 L" or "20 fl oz" */
-    fluid: l => `${fl(l)} ${metric ? 'L' : 'fl oz'}`,
-    fluidRange: (a, b) => `${fl(a)}–${fl(b)} ${metric ? 'L' : 'fl oz'}`,
+    fluid: l => `${fl(l)} ${metric ? 'ml' : 'fl oz'}`,
+    fluidRange: (a, b) => `${fl(a)}–${fl(b)} ${metric ? 'ml' : 'fl oz'}`,
     range: (a, b) => metric ? `${Math.round(a * KM_PER_MI)}–${Math.round(b * KM_PER_MI)} km` : `${a}–${b} mi`,
     /* pace in min/mi -> "m:ss/unit" */
     pace: minPerMi => fmtPace(metric ? minPerMi / KM_PER_MI : minPerMi) + (metric ? '/km' : '/mi'),
@@ -1033,8 +1033,8 @@ function buildWeekDays(wk, layout, cfg, U, paces, G) {
         const est = easyMid ? wk.long * easyMid : null;
         if (est) parts.push(`~${hm(est)}`);
         if ((est && est >= 75) || (!est && wk.long >= 9)) {
-          const g = perHr => Math.round(est / 60 * perHr / 5) * 5;
-          parts.push('fuel 30–60 g carbs/hr' + (est ? ` (about ${g(30)}–${g(60)} g in all)` : ''));
+          const g = perHr => Math.round((est - 30) / 60 * perHr / 5) * 5;  /* fuelling usually starts about 30 min in */
+          parts.push('fuel 30–60 g carbs/hr' + (est ? ` (about ${g(30)}–${g(60)} g after the first half hour)` : ''));
         }
         det = parts.join(' · ');
         const pp = [];
@@ -1177,6 +1177,7 @@ const PERSONAL = { weight: ['mass', 1], sweatLoss: ['mass', 0.1], sweatDrink: ['
 const UNIT_LABELS = { mass: ['lb', 'kg'], fluid: ['fl oz', 'ml'] };
 /* A personal field's entry value in kg (mass) or litres (fluid). */
 const toBase = (kind, v, metric) => kind === 'mass' ? (metric ? v : v / LB_PER_KG) : (metric ? v / 1000 : v * ML_PER_FLOZ / 1000);
+const fromBase = (kind, b, metric) => kind === 'mass' ? (metric ? b : b * LB_PER_KG) : (metric ? b * 1000 : b * 1000 / ML_PER_FLOZ);
 const miToKmField = mi => Math.round(mi * KM_PER_MI);  /* form distances in km are whole numbers */
 /* A preset's form values in the current units (metric distances round to whole km, as unit switching does). */
 function presetValues(id, units) {
@@ -1246,8 +1247,7 @@ function convertPersonal(from, to) {
   for (const [k, [kind, step]] of Object.entries(PERSONAL)) {
     const el = form.elements[k], v = Number(el.value);
     if (el.value === '' || !Number.isFinite(v)) continue;
-    const base = toBase(kind, v, from === 'metric');  /* kg or L */
-    const shown = kind === 'mass' ? (to === 'metric' ? base : base * LB_PER_KG) : (to === 'metric' ? base * 1000 : base * 1000 / ML_PER_FLOZ);
+    const shown = fromBase(kind, toBase(kind, v, from === 'metric'), to === 'metric');
     el.value = Math.round(Math.round(shown / step) * step * 10) / 10;
   }
 }
@@ -1289,10 +1289,14 @@ function goalTransition(P, N) {
 
 /* One-hour sweat test: weight lost (kg) plus fluid drunk (L) is the sweat rate in L/h. */
 function sweatTest(s, r, metric) {
-  if (s.sweatLoss === '' || s.sweatDrink === '') return {};
-  const loss = clamp(Number(s.sweatLoss), r.sweatLoss[0], r.sweatLoss[1]), drink = clamp(Number(s.sweatDrink), r.sweatDrink[0], r.sweatDrink[1]);
-  if (!Number.isFinite(loss) || !Number.isFinite(drink)) return {};
-  return { overDrank: loss < 0, sweatLh: toBase('mass', loss, metric) + toBase('fluid', drink, metric) };
+  const val = k => { const v = Number(s[k]); return s[k] === '' || !Number.isFinite(v) ? null : v; };
+  const loss = val('sweatLoss'), drink = val('sweatDrink');
+  const inRange = (k, v) => v === null || (v >= r[k][0] && v <= r[k][1]);
+  if (!inRange('sweatLoss', loss) || !inRange('sweatDrink', drink)) return { sweatOutOfRange: true };
+  /* A gain beyond scale noise (about 0.2 kg) means drinking more than you sweat, whatever was entered for the drink. */
+  const out = { overDrank: loss !== null && toBase('mass', loss, metric) < -0.2 };
+  if (loss !== null && drink !== null) out.sweatLh = toBase('mass', loss, metric) + toBase('fluid', drink, metric);
+  return out;
 }
 function readCfg() {
   const s = snapshot();
@@ -1463,6 +1467,7 @@ function renderSummary(cal) {
   const sources = [cfg.weightKg && 'body weight', cfg.sweatLh > 0 && 'sweat test'].filter(Boolean).join(' and ');
   const fuelLine = fuel.length ? `<li><strong>Fuel &amp; fluids</strong> (from your ${sources}): ${fuel.join('. ')}. Eat enough for training on top of daily needs; these are ranges, not limits.</li>` : '';
   const warns = plan.warnings.slice();
+  if (cfg.sweatOutOfRange) warns.push('A sweat-test number is outside the expected range, so no drink plan is shown. Check the weight lost and the fluid drunk.');
   if (cfg.overDrank) warns.push('You gained weight during your sweat test, which means you drank more than you sweated. Drink less on runs: over-drinking can cause dangerous hyponatremia (low blood sodium).');
   if (cal.anchorWarn) warns.push(cal.anchorWarn);
   if (cfg.weeksForced) warns.push(`A ${G.name} plan needs at least ${G.minWeeks} weeks, so this calendar uses ${G.minWeeks}. Increase the plan length${G.race ? ', or choose "Build durability"' : ''}.`);
