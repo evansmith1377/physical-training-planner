@@ -60,7 +60,7 @@ When inputs conflict, the page shows a warning instead of silently adjusting. Ex
 
 ## Development
 
-The site needs nothing to run. The tests use Python, pytest and Playwright (with axe-core for accessibility):
+The site needs nothing to run. The tests use Python (CI runs 3.14; 3.12 or newer works locally), pytest and Playwright (with axe-core for accessibility):
 
 ```sh
 pip install -r requirements-dev.txt
@@ -68,7 +68,7 @@ python -m playwright install chromium
 pytest -q
 ```
 
-The suite serves the page over local HTTP, so the Content Security Policy applies, and fails on any console error. It covers layout from 320 to 1280 px, units, shared links (including hostile ones), each goal, dates and calendar export, checkmarks, print sizes, plan invariants across many settings, and serious accessibility violations.
+The suite serves the page over local HTTP, so the Content Security Policy applies, and fails on any console error or warning, and on any Python warning. It covers layout from 320 to 1280 px, units, shared links (including hostile ones), each goal, dates and calendar export, checkmarks, print sizes, plan invariants across many settings, and serious accessibility violations.
 
 | Script | Purpose |
 |---|---|

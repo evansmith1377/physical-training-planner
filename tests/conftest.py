@@ -1,5 +1,5 @@
 """Shared fixtures: serve the repo over local HTTP (so the CSP applies as in production)
-and give each test a fresh page that fails on any console error or page error."""
+and give each test a fresh page that fails on any console error or warning, or page error."""
 import functools
 import http.server
 import threading
@@ -19,10 +19,10 @@ class _QuietHandler(http.server.SimpleHTTPRequestHandler):
 @pytest.fixture(scope="session")
 def base_url():
     handler = functools.partial(_QuietHandler, directory=str(ROOT))
-    server = http.server.ThreadingHTTPServer(("127.0.0.1", 0), handler)
-    threading.Thread(target=server.serve_forever, daemon=True).start()
-    yield f"http://127.0.0.1:{server.server_port}/"
-    server.shutdown()
+    with http.server.ThreadingHTTPServer(("127.0.0.1", 0), handler) as server:  # closes the socket on exit
+        threading.Thread(target=server.serve_forever, daemon=True).start()
+        yield f"http://127.0.0.1:{server.server_port}/"
+        server.shutdown()
 
 
 @pytest.fixture(scope="session")
@@ -47,8 +47,8 @@ def make_page(browser, base_url):
         )
         contexts.append(ctx)
         page = ctx.new_page()
-        page.on("console", lambda m: m.type == "error" and errors.append(m.text))
-        page.on("pageerror", lambda e: errors.append(str(e)))
+        page.on("console", lambda m: m.type in ("error", "warning") and errors.append(f"console {m.type}: {m.text} ({m.location.get('url', '')}:{m.location.get('lineNumber', '')})"))
+        page.on("pageerror", lambda e: errors.append(f"page error: {e}"))
         if now:
             page.clock.set_fixed_time(now)
         page.goto(base_url + query)
@@ -58,7 +58,7 @@ def make_page(browser, base_url):
     yield _make
     for ctx in contexts:
         ctx.close()
-    assert not errors, f"Console/page errors: {errors}"
+    assert not errors, f"Console warnings/errors or page errors: {errors}"
 
 
 @pytest.fixture

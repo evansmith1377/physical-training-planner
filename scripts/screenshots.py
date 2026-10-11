@@ -68,6 +68,7 @@ def main():
         mob.screenshot(path=ROOT / "docs" / "screenshot-mobile.png")
         browser.close()
     server.shutdown()
+    server.server_close()
     print("Wrote assets/og-image.png, docs/screenshot-desktop.png, docs/screenshot-mobile.png")
 
 
