@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="color-scheme" content="light dark">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-AyEcqjbC+uC8DyuDPMkzUslKA8jugxw5qiwZKXPya3I='; style-src 'unsafe-inline'; img-src 'self' data:; base-uri 'none'; form-action 'none'; object-src 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-R1ZbMZ3/xbI3u2mWYxkqyz03/JaKxGXW3GGUsrf9nSw='; style-src 'unsafe-inline'; img-src 'self' data:; base-uri 'none'; form-action 'none'; object-src 'none'">
 <meta name="description" content="Free printable training calendar for the marathon or half marathon. Enter your current mileage to get a week-by-week, readiness-based plan with optional pace guidance and calendar export.">
 <link rel="canonical" href="https://evansmith1377.github.io/physical-training-planner/">
 <meta name="theme-color" content="#f3f6f8" media="(prefers-color-scheme: light)">
@@ -901,7 +901,7 @@ function generatePlan(cfg, U, G) {
   let M = cfg.startMiles;
   /* Phase 1 keeps the current long run (up to ~55% of the week); the build keeps it at or below ~50%. */
   let full = f05(Math.min(cfg.startLong, 0.55 * M));
-  if (U.val(full) < U.val(cfg.startLong)) notes.push(`Early long runs start at ${U.D(full)} rather than ${U.D(cfg.startLong)}: that run is more than half of your usual week. Build weekly distance first.`);
+  if (U.val(full) < U.val(cfg.startLong) && cfg.startMiles >= LOW_MI) notes.push(`Early long runs start at ${U.D(full)} rather than ${U.D(cfg.startLong)}: that run is more than half of your usual week. Build weekly distance first.`);
   let maxM = M, maxL = full, reachedPeak = false, altDown = true;
   let tempoI = 0, qI = 0, p3n = 0, lqI = 0, p3Entry = null;
   const weeks = [];
@@ -915,7 +915,7 @@ function generatePlan(cfg, U, G) {
       const cut = w > 1 && w % cfg.cutEvery === 0 && !(race && w === buildEnd);
       wk.cut = cut;
       if (wk.phase > 1 && !cut) {
-        M = Math.min(capM, M + clamp(M * 0.08, 1.5, 3));
+        M = Math.min(capM, M + clamp(M * 0.08, Math.min(1.5, Math.max(0.5, f05(M * 0.25))), 3));  /* at most +25% a week from a tiny base */
         const target = Math.min(capL, full + 1);
         full = Math.max(full, f05(Math.min(target, 0.5 * M)));
       }
@@ -948,7 +948,7 @@ function generatePlan(cfg, U, G) {
         wk.race = true;
         wk.miles = maxM * G.raceWeek;
         wk.long = 0;
-        wk.q = { kind: 'sharpen' };
+        wk.q = wk.low ? { kind: 'strides' } : { kind: 'sharpen' };
         wk.strengthCount = 0;
       } else {
         wk.miles = maxM * G.taperM[T][ti - 1];
@@ -976,10 +976,10 @@ function buildWeekDays(wk, layout, cfg, U, paces, G) {
   const sumW = runDays.reduce((a, d) => a + WEIGHTS[roles[d]], 0) || 1;
   const { low, q } = wk;
   const dist = {};  /* run days left out of dist are walk days */
-  const thin = nonLong < 2 * runDays.length;
+  const thin = low && nonLong < 2 * runDays.length;
   if (thin) {
     /* Too little to give every run day 2 mi: short runs (no longer than the long run, at most 2 mi) on the busiest days, walks on the rest. */
-    const k = nonLong < 0.5 ? 0 : clamp(Math.ceil(nonLong / clamp(wk.long, 0.5, 2)), 1, runDays.length);
+    const k = nonLong < 0.5 ? 0 : clamp(Math.min(Math.ceil(nonLong / clamp(wk.long, 0.5, 2)), Math.floor(nonLong / 0.5)), 1, runDays.length);
     [...runDays].sort((a, b) => WEIGHTS[roles[b]] - WEIGHTS[roles[a]]).slice(0, k).forEach(d => dist[d] = Math.max(0.5, f05(nonLong / k)));
   } else {
     runDays.forEach(d => dist[d] = r05(nonLong * WEIGHTS[roles[d]] / sumW));
@@ -1560,7 +1560,8 @@ function applyPreset(id, name) {
   let kept = '';
   replaceSettings(() => {
     const v = presetValues(id, getField('units'));
-    if (GOALS[v.goal].race) setField('taper', v.taper ?? GOALS[v.goal].defTaper);  /* a starting point uses the goal's usual taper */
+    const N = GOALS[v.goal];  /* keep the visitor's taper if it suits the new goal; otherwise use the goal's usual one */
+    if (N.race && !N.tapers.includes(+getField('taper'))) setField('taper', N.defTaper);
     goalTransition(GOALS[currentGoal], GOALS[v.goal]);
     /* A race date the visitor set still decides the plan length. */
     if (GOALS[v.goal].race && getField('anchorDate')) { kept = ` Kept your ${getField('weeks')}-week plan to fit your race date.`; delete v.weeks; }

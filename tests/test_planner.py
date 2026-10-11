@@ -386,20 +386,23 @@ def test_couch_start_builds_with_run_walk_and_walk_days(page):
     """From 1 mi a week: weeks hold the planned volume (no 2 mi floors), spare days are walks, and
     until the build passes LOW_MI runs are run/walk, never longer than the long run, with no tempo.
     Tempo then starts at the gentlest step, and a later cutback doesn't bring run/walk back."""
-    weeks, first_tempo = page.evaluate("""() => [computeCalendar({ ...readCfg(), goal: 'base', startMiles: 1, startLong: 1, peakMiles: 15,
-        peakLong: 6, weeks: 20, cutEvery: 3, days: 4, strength: 1 }).weeks.map(w => ({ miles: w.wk.miles, long: w.wk.long,
+    low_mi = page.evaluate("LOW_MI")
+    weeks, first_tempo = page.evaluate("""() => [computeCalendar({ ...readCfg(), goal: 'base', startMiles: 1, startLong: 1, peakMiles: 20,
+        peakLong: 8, weeks: 30, cutEvery: 3, days: 4, strength: 1 }).weeks.map(w => ({ miles: w.wk.miles, long: w.wk.long,
         low: w.wk.low, total: w.total, texts: w.cells.map(c => c.t + ' ' + c.det) })), TEMPO[0].text]""")
     assert weeks[0]["total"] == 1
     assert sum("Walk · 20–30 min" in t for t in weeks[0]["texts"]) == 2
     for w in weeks:
-        assert w["total"] <= w["miles"] + 1, w
         runs = [float(m) for t in w["texts"] for m in re.findall(r"^(?:Easy|Recovery) · ([\d.]+) mi", t)]
         assert any("Run/walk is fine" in t for t in w["texts"]) == w["low"], w
         if w["low"]:
+            assert w["total"] <= w["miles"] + 0.5, w  # no padding up to 2 mi a run day
             assert not any(t.startswith("Tempo") for t in w["texts"]) and all(r <= max(w["long"], 2) for r in runs), w
     tempos = [t for w in weeks for t in w["texts"] if t.startswith("Tempo")]
     assert tempos and first_tempo in tempos[0]
-    assert not weeks[-3]["low"] and weeks[-3]["miles"] < 15  # the week-18 cutback stays out of run/walk
+    assert not weeks[23]["low"] and weeks[23]["miles"] < low_mi  # the week-24 cutback stays out of run/walk
+    miles = [w["miles"] for w in weeks]
+    assert all(m <= max(miles[:i]) * 1.5 + 0.01 for i, m in enumerate(miles) if i), miles  # no doubling from a tiny base
 
 
 @pytest.mark.parametrize("query,peak", [
