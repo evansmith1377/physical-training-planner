@@ -334,6 +334,18 @@ def test_toggletip_opens_and_closes(page):
     expect(btn).to_have_attribute("aria-expanded", "false")
 
 
+def test_no_calorie_target_explanation_is_optional(page):
+    """The 'why no calorie target' reasoning is a toggletip: hidden until asked for, and sourced in the guide."""
+    tip = page.locator("#tipNoCalories")
+    expect(tip).to_be_hidden()
+    page.click("#fuelDetails summary")
+    page.click('button[popovertarget="tipNoCalories"]')
+    expect(tip).to_be_visible()
+    expect(tip).to_contain_text("Why no calorie target?")
+    expect(tip).to_contain_text("RED-S")
+    assert "Relative Energy Deficiency in Sport" in page.inner_text(".guide")
+
+
 # ---------------------------------------------------------------- goals
 
 def test_half_marathon_plan(page):

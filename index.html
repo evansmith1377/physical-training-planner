@@ -493,7 +493,11 @@ footer.site { margin-block-start: 1.5rem; font-size: .85rem; color: var(--muted)
 
     <details id="fuelDetails">
       <summary>Fuel &amp; fluids <span class="optional">optional</span> — carb, protein and drink amounts sized to you</summary>
-      <p class="hint">Your body weight (above) gives daily carb and protein ranges. For a drink plan, do a one-hour sweat test: weigh yourself without clothes before and after an easy 60-minute run, and note what you drank. These numbers stay in this browser and never go into shared links.</p>
+      <div class="label-row" style="margin-block-end:.4rem">
+        <p class="hint" style="margin:0">Your body weight (above) gives daily carb and protein ranges. For a drink plan, do a one-hour sweat test: weigh yourself without clothes before and after an easy 60-minute run, and note what you drank. These numbers stay in this browser and never go into shared links.</p>
+        <button type="button" class="tip" popovertarget="tipNoCalories" aria-label="Why there's no calorie target">i</button>
+        <div id="tipNoCalories" popover class="tipbox"><strong>Why no calorie target?</strong> A calorie number built from a few inputs is often off by 10–20%, and it's easy to treat as a limit. Eating too little for your training (low energy availability, or RED-S) raises the risk of stress fractures, illness, hormone and menstrual changes, and stalled progress. So the planner gives carb and protein ranges and lets hunger fill in the rest. For exact energy needs (weight change, pregnancy, a medical condition, or a history of disordered eating), work with a sports dietitian or clinician.</div>
+      </div>
       <div class="pace-grid">
         <div class="field">
           <label for="sweatLoss">Weight lost on a 1-hour run (<span data-u="weight">lb</span>)</label>
@@ -666,6 +670,7 @@ footer.site { margin-block-start: 1.5rem; font-size: .85rem; color: var(--muted)
 <li>ACSM. Exercise and Fluid Replacement. <em>Med Sci Sports Exerc</em> (2007). <a href="https://pubmed.ncbi.nlm.nih.gov/17277604/" rel="noopener">PubMed</a></li>
 <li>Roberts WO, et al. ACSM Expert Consensus Statement on Exertional Heat Illness (2023). <a href="https://pubmed.ncbi.nlm.nih.gov/37036463/" rel="noopener">PubMed</a></li>
 <li>Wang Z, et al. Effects of tapering on performance in endurance athletes: meta-analysis. <em>PLOS ONE</em> (2023). <a href="https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0282838" rel="noopener">Full text</a></li>
+<li>Mountjoy M, et al. 2023 IOC consensus statement on Relative Energy Deficiency in Sport (REDs). <em>Br J Sports Med</em> (2023). <a href="https://pubmed.ncbi.nlm.nih.gov/37752011/" rel="noopener">PubMed</a></li>
 </ol>
 <p class="muted">These sources inform the plan but can't determine individual medical risk or guarantee injury prevention. For exact calorie needs, a personalized pace prescription, or a race-specific plan, work with a credentialed professional.</p>
 </div>
