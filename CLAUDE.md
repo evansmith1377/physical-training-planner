@@ -40,7 +40,7 @@ To add a setting: add it to `FIELDS` and the form markup, read it in `readCfg`, 
 
 ## Front-end conventions
 
-- Use Google's modern-web-guidance (`npx -y modern-web-guidance@latest search "<topic>"`) before adding UI patterns. Prefer Baseline Widely Available features, and give anything newer a fallback.
+- Use Google's modern-web-guidance skill (vendored in `.claude/skills/modern-web-guidance/`; it searches with `npx -y modern-web-guidance@latest search "<topic>"`) before adding UI patterns. Prefer Baseline Widely Available features, and give anything newer a fallback.
 - Labels go above fields. Short options use radio "pills". Hints are linked with `aria-describedby`, and errors appear on `:user-invalid`. Tap targets are at least 44px and inputs at least 16px (to stop iOS zoom).
 - Explanations: anything needed to fill in a field correctly is a visible hint. Background "why" goes in an ⓘ toggletip. No hover-only tooltips.
 - Colors come from CSS custom properties: light by default, dark under `prefers-color-scheme`, and print forces light.
@@ -50,6 +50,8 @@ To add a setting: add it to `FIELDS` and the form markup, read it in `readCfg`, 
 ## Review lenses
 
 Design, build, test and review every change through each lens that applies, not only the obvious one. Each lens adds questions on top of the Hard constraints above.
+
+The three domain experts and the six personas below are also read-only agents in `.claude/agents/` (`lens-running-coach`, `lens-sports-medicine`, `lens-sports-dietitian`, `lens-persona-*`). `/panel lenses` runs them all on the current diff in parallel and merges their verdicts. Add another with `/add-lens`.
 
 **Engineering and operations**
 - **Principal engineer / systems architect:** is this the simplest change, at the right layer, with no duplicated logic?
