@@ -23,6 +23,7 @@ jobs:
     # Manual runs can target any branch; only main may publish.
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
